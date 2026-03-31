@@ -1,0 +1,38 @@
+<script>
+(function () {
+  var eventName = {{Event}};
+  var stats = {{DLV - consent_statistics}};
+  var source = {{DLV - consent_source_event}};
+  var mode = null;
+
+  if (eventName === 'cookie_accept') {
+    mode = 'cookies';
+  } else if (eventName === 'cookie_reject') {
+    mode = 'cookieless';
+  } else if (eventName === 'cookie_partial') {
+    mode = String(stats) === '1' ? 'cookies' : 'cookieless';
+  } else if (eventName === 'cookie_state_bootstrap') {
+    if (source === 'cookie_accept') {
+      mode = 'cookies';
+    } else if (source === 'cookie_reject') {
+      mode = 'cookieless';
+    } else if (source === 'cookie_partial') {
+      mode = String(stats) === '1' ? 'cookies' : 'cookieless';
+    }
+  }
+
+  if (!mode) return;
+
+  window._paq = window._paq || [];
+
+  if (mode === 'cookieless') {
+    window._paq.push(['disableCookies']);
+    window._paq.push(['deleteCookies']);
+  }
+
+  window._paq.push(['setConsentGiven']);
+
+  window._mtm = window._mtm || [];
+  window._mtm.push({ event: 'matomo_track_pageview' });
+})();
+</script>

@@ -1,0 +1,31 @@
+<script>
+(function () {
+  var choice = null;
+  var stats = null;
+  var consentId = null;
+
+  try { choice = localStorage.getItem('matomoConsentChoice:v2'); } catch (e) {}
+  try { stats = localStorage.getItem('matomoConsentStatsEnabled:v1'); } catch (e) {}
+  try { consentId = localStorage.getItem('matomoConsentId:v1'); } catch (e) {}
+
+  if (!choice) return;
+
+  var sourceEvent = null;
+
+  if (choice === 'accepted') {
+    sourceEvent = 'cookie_accept';
+  } else if (choice === 'declined') {
+    sourceEvent = 'cookie_reject';
+  } else if (choice === 'custom') {
+    sourceEvent = 'cookie_partial';
+  }
+
+  window._mtm = window._mtm || [];
+  window._mtm.push({
+    event: 'cookie_state_bootstrap',
+    consent_source_event: sourceEvent,
+    consent_id: consentId || '',
+    consent_statistics: stats === '1' ? 1 : 0
+  });
+})();
+</script>
