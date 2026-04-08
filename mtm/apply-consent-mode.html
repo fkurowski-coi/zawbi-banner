@@ -1,31 +1,19 @@
 <script>
 (function () {
-  var eventName = {{Event}};
-  var stats = {{DLV - consent_statistics}};
-  var source = {{DLV - consent_source_event}};
-  var mode = null;
+  var action = '{{DLV - consent_action}}';
+  var stats = '{{DLV - consent_statistics}}';
 
-  if (eventName === 'cookie_accept') {
-    mode = 'cookies';
-  } else if (eventName === 'cookie_reject') {
-    mode = 'cookieless';
-  } else if (eventName === 'cookie_partial') {
-    mode = String(stats) === '1' ? 'cookies' : 'cookieless';
-  } else if (eventName === 'cookie_state_bootstrap') {
-    if (source === 'cookie_accept') {
-      mode = 'cookies';
-    } else if (source === 'cookie_reject') {
-      mode = 'cookieless';
-    } else if (source === 'cookie_partial') {
-      mode = String(stats) === '1' ? 'cookies' : 'cookieless';
-    }
+  if (!action || action === 'display') {
+    return;
   }
 
-  if (!mode) return;
+  var useCookieless =
+    action === 'reject' ||
+    ((action === 'partial' || action === 'bootstrap') && String(stats) !== '1');
 
   window._paq = window._paq || [];
 
-  if (mode === 'cookieless') {
+  if (useCookieless) {
     window._paq.push(['disableCookies']);
     window._paq.push(['deleteCookies']);
   }
