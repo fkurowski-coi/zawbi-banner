@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zawbi Banner - Test Page</title>
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 20px; 
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .status-box {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .status-box h3 {
+      margin-top: 0;
+    }
+    .status-item {
+      padding: 8px;
+      margin: 4px 0;
+      border-left: 3px solid #ddd;
+      padding-left: 12px;
+    }
+    .status-item.success {
+      border-color: #4caf50;
+      background: #e8f5e9;
+    }
+    .status-item.error {
+      border-color: #f44336;
+      background: #ffebee;
+    }
+    .status-item.info {
+      border-color: #2196f3;
+      background: #e3f2fd;
+    }
+    button {
+      margin: 10px 10px 10px 0;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+    button:hover {
+      background: #f5f5f5;
+    }
+    .console-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 20px 0;
+    }
+    .console-log div {
+      margin: 2px 0;
+      padding: 2px 0;
+    }
+    .log-info { color: #4fc3f7; }
+    .log-success { color: #81c784; }
+    .log-error { color: #e57373; }
+    .log-warning { color: #ffb74d; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Zawbi Banner - Test Page</h1>
+  <p>Wersja: Stara (bez MTM events integration)</p>
+  
+  <div class="status-box">
+    <h3>Current Status</h3>
+    <div id="status-container">
+      <div class="status-item info">Loading...</div>
+    </div>
+  </div>
+
+  <div class="status-box">
+    <h3>MTM Data Layer (_mtm)</h3>
+    <div id="mtm-status">
+      <div class="status-item info">Waiting for _mtm...</div>
+    </div>
+  </div>
+
+  <div class="status-box">
+    <h3>Controls</h3>
+    <button onclick="refreshStatus()">🔄 Refresh Status</button>
+    <button onclick="resetConsent()">🗑️ Reset Consent</button>
+    <button onclick="showMTM()">📊 Show _mtm Contents</button>
+    <button onclick="clearLogs()">🧹 Clear Logs</button>
+    <button onclick="forceShowBanner()">👁️ Force Show Banner</button>
+  </div>
+
+  <div class="status-box">
+    <h3>Console Output</h3>
+    <div id="console-output" class="console-log"></div>
+  </div>
+
+  <!-- CSS Bannera -->
+  <link rel="stylesheet" href="zawbi_banner.css">
+  
+  <!-- SDK Bannera -->
+  <script src="zawbi_banner.js"></script>
+  
+  <script>
+    // Przechwytuj console.log
+    var logs = [];
+    var originalLog = console.log;
+    var originalWarn = console.warn;
+    var originalError = console.error;
+    
+    console.log = function() {
+      var args = Array.prototype.slice.call(arguments);
+      logMessage(args, 'info');
+      return originalLog.apply(console, arguments);
+    };
+    
+    console.warn = function() {
+      var args = Array.prototype.slice.call(arguments);
+      logMessage(args, 'warning');
+      return originalWarn.apply(console, arguments);
+    };
+    
+    console.error = function() {
+      var args = Array.prototype.slice.call(arguments);
+      logMessage(args, 'error');
+      return originalError.apply(console, arguments);
+    };
+    
+    function logMessage(args, type) {
+      var message = args.map(function(arg) {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch(e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' ');
+      
+      logs.push({
+        message: message,
+        timestamp: new Date().toLocaleTimeString(),
+        type: type
+      });
+      
+      updateConsoleOutput();
+    }
+
+    function updateConsoleOutput() {
+      var container = document.getElementById('console-output');
+      container.innerHTML = logs.map(function(log) {
+        return '<div class="log-' + log.type + '">[' + log.timestamp + '] ' + log.message + '</div>';
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearLogs() {
+      logs = [];
+      updateConsoleOutput();
+    }
+
+    // Initialize SDK
+    console.log('=== INITIALIZING BANNER ===');
+    MatomoConsentSDK.showBanner({
+      policyUrl: "/polityka-prywatnosci",
+      bannerVersion: "1.0.0-test"
+    });
+    console.log('Banner initialized');
+
+    // Status check
+    function refreshStatus() {
+      var container = document.getElementById('status-container');
+      var html = '';
+      
+      // Check localStorage
+      var choice = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var consentId = localStorage.getItem('matomoConsentId:v1');
+      
+      if (choice === 'accepted' || (choice === 'custom' && stats === '1')) {
+        html += '<div class="status-item success">✅ Consent: GRANTED</div>';
+      } else if (choice === 'declined' || (choice === 'custom' && stats === '0')) {
+        html += '<div class="status-item error">❌ Consent: DENIED</div>';
+      } else {
+        html += '<div class="status-item info">⏳ Consent: NOT SET (banner should show)</div>';
+      }
+      
+      html += '<div class="status-item info">Choice: ' + (choice || 'none') + '</div>';
+      html += '<div class="status-item info">Stats: ' + (stats || 'none') + '</div>';
+      html += '<div class="status-item info">Consent ID: ' + (consentId || 'none') + '</div>';
+      
+      // Check cookies
+      var cookies = document.cookie.split(';')
+        .map(function(c) { return c.trim(); })
+        .filter(function(c) { return c.includes('_pk_') || c.includes('mtm_'); });
+      
+      if (cookies.length > 0) {
+        html += '<div class="status-item success">✅ Cookies: ' + cookies.length + ' found</div>';
+        cookies.forEach(function(c) {
+          html += '<div class="status-item info" style="margin-left: 20px; font-size: 11px;">• ' + c + '</div>';
+        });
+      } else {
+        html += '<div class="status-item info">🍪 Cookies: None</div>';
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function showMTM() {
+      var mtmContainer = document.getElementById('mtm-status');
+      var html = '';
+      
+      if (typeof _mtm === 'undefined') {
+        html += '<div class="status-item error">❌ _mtm not defined!</div>';
+      } else {
+        html += '<div class="status-item success">✅ _mtm exists, length: ' + _mtm.length + '</div>';
+        
+        // Show all items
+        html += '<div style="margin-top: 10px; font-family: monospace; font-size: 11px;">';
+        _mtm.forEach(function(item, i) {
+          html += '<div style="margin: 4px 0; padding: 4px; background: rgba(0,0,0,0.05); border-radius: 3px;">';
+          html += '<strong>[' + i + ']</strong> ';
+          
+          // Highlight important events
+          if (item.event) {
+            if (item.event.includes('cookie')) {
+              html += '<span style="color: #0452A8; font-weight: bold;">' + item.event + '</span>';
+            } else {
+              html += item.event;
+            }
+          }
+          
+          html += ' ' + JSON.stringify(item);
+          html += '</div>';
+        });
+        html += '</div>';
+        
+        // Count events
+        var events = _mtm.filter(function(item) {
+          return item && item.event;
+        });
+        
+        if (events.length > 0) {
+          html += '<div class="status-item success" style="margin-top: 10px;">✅ Found ' + events.length + ' event(s)</div>';
+          
+          // Count by type
+          var eventTypes = {};
+          events.forEach(function(item) {
+            var type = item.event;
+            eventTypes[type] = (eventTypes[type] || 0) + 1;
+          });
+          
+          html += '<div style="margin-top: 5px; font-size: 12px;">';
+          Object.keys(eventTypes).forEach(function(type) {
+            html += '<div class="status-item info" style="margin-left: 20px;">• ' + type + ': ' + eventTypes[type] + '</div>';
+          });
+          html += '</div>';
+        }
+      }
+      
+      mtmContainer.innerHTML = html;
+    }
+
+    function resetConsent() {
+      if (confirm('Reset consent and reload page?')) {
+        console.log('Resetting consent...');
+        
+        // Use SDK method
+        if (typeof MatomoConsentSDK !== 'undefined' && MatomoConsentSDK.resetConsent) {
+          MatomoConsentSDK.resetConsent();
+        }
+        
+        // Also clear manually to be sure
+        localStorage.removeItem('matomoConsentChoice:v2');
+        localStorage.removeItem('matomoConsentStatsEnabled:v1');
+        localStorage.removeItem('matomoConsentId:v1');
+        
+        // Delete cookies
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+        });
+        
+        console.log('Consent reset, reloading...');
+        location.reload();
+      }
+    }
+    
+    function forceShowBanner() {
+      console.log('Force showing banner...');
+      if (typeof MatomoConsentSDK !== 'undefined') {
+        MatomoConsentSDK.showBanner({
+          forceShow: true
+        });
+        console.log('Banner force-shown');
+      } else {
+        console.error('MatomoConsentSDK not available!');
+      }
+    }
+
+    // Auto-refresh
+    setInterval(function() {
+      refreshStatus();
+      showMTM();
+    }, 2000);
+
+    // Initial load
+    setTimeout(function() {
+      refreshStatus();
+      showMTM();
+      
+      console.log('');
+      console.log('=== TEST PAGE READY ===');
+      console.log('This page tests the OLD banner version (without MTM events integration)');
+      console.log('');
+      console.log('Events pushed to _mtm:');
+      console.log('- cookie_banner_display (when banner shows)');
+      console.log('- cookie_accept (when user accepts)');
+      console.log('- cookie_reject (when user rejects)');
+      console.log('- cookie_partial (when user customizes)');
+      console.log('');
+      console.log('Note: This version does NOT push analytics_consent variable');
+      console.log('');
+    }, 1000);
+  </script>
+
+  <!-- MTM Container -->
+  <script>
+    var _mtm = window._mtm = window._mtm || [];
+    _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+    (function() {
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.async=true; 
+      g.src='https://pi-ogp.coi.gov.pl/js/container_8JgEPMOA.js'; 
+      s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+</body>
+</html>
