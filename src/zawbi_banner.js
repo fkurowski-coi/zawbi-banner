@@ -1,47 +1,60 @@
+/**
+ * Matomo Consent Banner SDK
+ * Version: 2.0.0 - MTM Managed Tracking
+ * 
+ * Banner only handles UI and pushes events to _mtm
+ * MTM manages all Matomo tracking (loading, pageview, consent)
+ */
+
 "use strict";
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 (function (root, factory) {
-  if ((typeof module === "undefined" ? "undefined" : _typeof(module)) === 'object' && module.exports) {
+  if (typeof module === 'object' && module.exports) {
     module.exports = factory();
   } else {
     root.MatomoConsentSDK = factory();
   }
 })(typeof self !== 'undefined' ? self : void 0, function () {
+  
   var DEFAULT_CONFIG = {
     forceShow: false,
     forceCookiePanel: false,
     resetChoice: false,
     policyUrl: "/polityka-prywatnosci",
-    bannerVersion: "1.0.0",
+    bannerVersion: "2.0.0",
     cookieTableEnabled: true,
-    cookieTableRows: [{
-      name: "_pk_id",
-      purpose: "Identyfikator odwiedzającego (statystyki)",
-      type: "First-party, statystyczne",
-      duration: "~13 mies."
-    }, {
-      name: "_pk_ses",
-      purpose: "Sesja Matomo",
-      type: "First-party, statystyczne",
-      duration: "~30 min"
-    }, {
-      name: "_pk_ref",
-      purpose: "Źródło wejścia",
-      type: "First-party, statystyczne",
-      duration: "~6 mies."
-    }, {
-      name: "mtm_consent",
-      purpose: "Pamięć zgody",
-      type: "First-party, funkcjonalne",
-      duration: "zgodnie z remember*"
-    }, {
-      name: "matomo_sessid",
-      purpose: "Techniczne sesyjne",
-      type: "First-party, techniczne",
-      duration: "sesja"
-    }]
+    cookieTableRows: [
+      {
+        name: "_pk_id",
+        purpose: "Identyfikator odwiedzającego (statystyki)",
+        type: "First-party, statystyczne",
+        duration: "~13 mies."
+      },
+      {
+        name: "_pk_ses",
+        purpose: "Sesja Matomo",
+        type: "First-party, statystyczne",
+        duration: "~30 min"
+      },
+      {
+        name: "_pk_ref",
+        purpose: "Źródło wejścia",
+        type: "First-party, statystyczne",
+        duration: "~6 mies."
+      },
+      {
+        name: "mtm_consent",
+        purpose: "Pamięć zgody",
+        type: "First-party, funkcjonalne",
+        duration: "zgodnie z remember*"
+      },
+      {
+        name: "matomo_sessid",
+        purpose: "Techniczne sesyjne",
+        type: "First-party, techniczne",
+        duration: "sesja"
+      }
+    ]
   };
 
   var LS_KEY_CHOICE = 'matomoConsentChoice:v2';
@@ -52,53 +65,66 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   var bannerEl = null;
   var handlersBound = false;
 
+  /**
+   * Get or create unique consent ID
+   */
   function getOrCreateConsentId() {
     var id = null;
-
+    
     try {
       id = localStorage.getItem(LS_KEY_ID);
     } catch (e) {}
-
+    
     if (!id) {
       id = 'c.' + Date.now().toString(36) + '.' + Math.random().toString(36).slice(2, 8);
-
+      
       try {
         localStorage.setItem(LS_KEY_ID, id);
       } catch (e) {}
     }
-
+    
     return id;
   }
 
+  /**
+   * Read stored stats enabled state
+   */
   function readStoredStatsEnabled(savedChoice) {
     if (savedChoice === 'accepted') return true;
     if (savedChoice === 'declined') return false;
-
+    
     var v = null;
-
+    
     try {
       v = localStorage.getItem(LS_KEY_STATS);
     } catch (e) {}
-
+    
     if (v === '1' || v === 'true') return true;
     if (v === '0' || v === 'false') return false;
-
+    
     return false;
   }
 
+  /**
+   * Push consent event to MTM data layer
+   * This is the ONLY interaction with analytics - no direct Matomo calls
+   */
   function pushConsentDataLayerEvent(action, statsEnabled) {
     var cfg = runtimeConfig || DEFAULT_CONFIG;
-
+    
     window._mtm = window._mtm || [];
     window._mtm.push({
       event: action,
       consent_id: getOrCreateConsentId(),
-      consent_statistics: typeof statsEnabled === 'boolean' ? statsEnabled ? 1 : 0 : null,
+      consent_statistics: typeof statsEnabled === 'boolean' ? (statsEnabled ? 1 : 0) : null,
       banner_version: cfg.bannerVersion || "",
       consent_datetime: new Date().toISOString()
     });
   }
 
+  /**
+   * Build banner HTML
+   */
   function ensureHtml() {
     var existing = document.getElementById('cb2-banner');
     if (existing) return existing;
@@ -177,21 +203,30 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     return div;
   }
 
+  /**
+   * Open banner
+   */
   function openBanner() {
     if (!bannerEl) return;
-
+    
     bannerEl.style.display = 'block';
     bannerEl.setAttribute('data-open', 'true');
     pushConsentDataLayerEvent('cookie_banner_display', null);
   }
 
+  /**
+   * Close banner
+   */
   function closeBanner() {
     if (!bannerEl) return;
-
+    
     bannerEl.setAttribute('data-open', 'false');
     bannerEl.style.display = 'none';
   }
 
+  /**
+   * Reset choice if needed (for testing)
+   */
   function resetChoiceIfNeeded() {
     var cfg = runtimeConfig || DEFAULT_CONFIG;
     if (!cfg.resetChoice) return;
@@ -209,6 +244,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     } catch (e) {}
   }
 
+  /**
+   * Bind event handlers to banner buttons
+   */
   function bindHandlersOnce() {
     if (!bannerEl || handlersBound) return;
 
@@ -223,17 +261,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return;
     }
 
+    // Toggle panel
     btnAdj.addEventListener('click', function () {
       panel.hidden = !panel.hidden;
       btnAdj.setAttribute('aria-expanded', String(!panel.hidden));
 
       if (!panel.hidden && window.matchMedia('(max-width:640px)').matches) {
-        panel.scrollIntoView({
-          block: 'nearest'
-        });
+        panel.scrollIntoView({ block: 'nearest' });
       }
     });
 
+    // Accept all
     btnAcc.addEventListener('click', function () {
       cbStats.checked = true;
 
@@ -249,6 +287,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       closeBanner();
     });
 
+    // Reject all
     btnRej.addEventListener('click', function () {
       cbStats.checked = false;
 
@@ -264,6 +303,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       closeBanner();
     });
 
+    // Save custom selection
     btnSave.addEventListener('click', function () {
       var enableStats = cbStats.checked;
 
@@ -282,11 +322,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     handlersBound = true;
   }
 
+  /**
+   * Initialize SDK with config
+   */
   function init(options) {
     runtimeConfig = Object.assign({}, runtimeConfig, options || {});
     return runtimeConfig;
   }
 
+  /**
+   * Show banner (main entry point)
+   */
   function showBanner(options) {
     runtimeConfig = Object.assign({}, runtimeConfig, options || {});
     bannerEl = ensureHtml();
@@ -294,8 +340,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     if (runtimeConfig.forceCookiePanel === true) {
       var panel = bannerEl.querySelector('#cb2-panel');
       var btnAdj = bannerEl.querySelector('#cb2-adjust');
-      panel.hidden = false;
-      btnAdj.setAttribute('aria-expanded', 'true');
+      if (panel && btnAdj) {
+        panel.hidden = false;
+        btnAdj.setAttribute('aria-expanded', 'true');
+      }
     }
 
     resetChoiceIfNeeded();
@@ -319,6 +367,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     return bannerEl;
   }
 
+  /**
+   * Reset consent (for testing)
+   */
   function resetConsent() {
     try {
       localStorage.removeItem(LS_KEY_CHOICE);
@@ -333,6 +384,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     } catch (e) {}
   }
 
+  /**
+   * Get current consent state
+   */
   function getConsentState() {
     try {
       return localStorage.getItem(LS_KEY_CHOICE);
@@ -341,12 +395,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   }
 
+  // Public API
   return {
     init: init,
     showBanner: showBanner,
     resetConsent: resetConsent,
     getConsentState: getConsentState,
-    _getCurrentConfig: function _getCurrentConfig() {
+    _getCurrentConfig: function () {
       return runtimeConfig;
     }
   };
