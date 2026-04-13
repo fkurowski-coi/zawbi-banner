@@ -1,19 +1,3 @@
-<!-- 
-  ════════════════════════════════════════════════════════════════
-  MTM Custom HTML Tag: CMP - Bootstrap consent state
-  ════════════════════════════════════════════════════════════════
-  
-  Trigger: Page View - All Pages
-  
-  Purpose:
-  - Checks localStorage on every page load
-  - If consent granted → loads matomo.js immediately
-  - If consent denied → does nothing (no tracking)
-  
-  IMPORTANT: Change Site ID to your actual site ID!
-  ════════════════════════════════════════════════════════════════
--->
-
 <script>
 (function() {
   'use strict';
@@ -45,6 +29,11 @@
     return;
   }
   
+  // Check if Matomo already loaded (avoid duplicate loading)
+  if (typeof Matomo !== 'undefined' && typeof Matomo.getAsyncTracker === 'function') {
+    return;
+  }
+  
   // Consent granted → load Matomo
   window._paq = window._paq || [];
   
@@ -53,9 +42,8 @@
   _paq.push(['setTrackerUrl', u + 'matomo.php']);
   _paq.push(['setSiteId', '1']); // ← CHANGE THIS TO YOUR SITE ID!
   
-  // Enable cookies (normal tracking with visitor ID)
+  // Normal tracking with cookies (no consent API)
   // Do NOT use requireCookieConsent or setCookieConsentGiven
-  // Just let Matomo work normally with cookies
   
   // Load matomo.js
   var d = document;
