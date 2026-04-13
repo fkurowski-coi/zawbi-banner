@@ -1,26 +1,77 @@
-<script>
-(function () {
-  var action = '{{DLV - consent_action}}';
-  var stats = '{{DLV - consent_statistics}}';
+<!-- 
+  ════════════════════════════════════════════════════════════════
+  MTM Custom HTML Tag: Matomo - Apply consent mode
+  ════════════════════════════════════════════════════════════════
+  
+  Trigger: Custom Event
+  Event Name (regex): ^cookie_accept$|^cookie_reject$|^cookie_partial$
+  
+  Purpose:
+  - Listens to consent events from banner
+  - cookie_accept → loads matomo.js and tracks
+  - cookie_partial (stats=1) → loads matomo.js and tracks
+  - cookie_reject → does nothing
+  - cookie_partial (stats=0) → does nothing
+  
+  IMPORTANT: Change Site ID to your actual site ID!
+  ════════════════════════════════════════════════════════════════
+-->
 
-  if (!action || action === 'display') {
+<script>
+(function() {
+  'use strict';
+  
+  // Get event data from data layer
+  var eventName = {{Event}};
+  var consentStats = {{DLV - consent_statistics}};
+  
+  // Determine if consent was granted
+  var consentGranted = false;
+  
+  if (eventName === 'cookie_accept') {
+    consentGranted = true;
+  } else if (eventName === 'cookie_partial' && consentStats === 1) {
+    consentGranted = true;
+  }
+  
+  // If no consent → exit early
+  if (!consentGranted) {
     return;
   }
-
-  var useCookieless =
-    action === 'reject' ||
-    ((action === 'partial' || action === 'bootstrap') && String(stats) !== '1');
-
-  window._paq = window._paq || [];
-
-  if (useCookieless) {
-    window._paq.push(['disableCookies']);
-    window._paq.push(['deleteCookies']);
+  
+  // Check if Matomo already loaded (by bootstrap tag)
+  if (typeof Matomo !== 'undefined' && typeof Matomo.getAsyncTracker === 'function') {
+    // Already loaded, just send pageview
+    window._paq = window._paq || [];
+    _paq.push(['trackPageView']);
+    return;
   }
-
-  window._paq.push(['setConsentGiven']);
-
-  window._mtm = window._mtm || [];
-  window._mtm.push({ event: 'matomo_track_pageview' });
+  
+  // Consent granted → load Matomo
+  window._paq = window._paq || [];
+  
+  // Configure Matomo
+  var u = "https://pi-ogp.coi.gov.pl/";
+  _paq.push(['setTrackerUrl', u + 'matomo.php']);
+  _paq.push(['setSiteId', '1']); // ← CHANGE THIS TO YOUR SITE ID!
+  
+  // Enable cookies (normal tracking with visitor ID)
+  // Do NOT use requireCookieConsent or setCookieConsentGiven
+  // Just let Matomo work normally with cookies
+  
+  // Load matomo.js
+  var d = document;
+  var g = d.createElement('script');
+  var s = d.getElementsByTagName('script')[0];
+  g.async = true;
+  g.src = u + 'matomo.js';
+  
+  g.onload = function() {
+    // After Matomo loads, track pageview
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+  };
+  
+  s.parentNode.insertBefore(g, s);
 })();
 </script>
