@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Test - Consent Banner + MTM Integration</title>
+  <style>
+    * { box-sizing: border-box; }
+    
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 20px; 
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #f0f2f5;
+    }
+    
+    h1 {
+      color: #0452A8;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .status-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .status-box h3 {
+      margin-top: 0;
+      color: #333;
+      font-size: 16px;
+      border-bottom: 2px solid #0452A8;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .status-item {
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-left: 3px solid #ddd;
+      background: #f9f9f9;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .status-item.success {
+      border-color: #4caf50;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .status-item.error {
+      border-color: #f44336;
+      background: #ffebee;
+      color: #c62828;
+    }
+    
+    .status-item.info {
+      border-color: #2196f3;
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    .status-item.warning {
+      border-color: #ff9800;
+      background: #fff3e0;
+      color: #e65100;
+    }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 0;
+    }
+    
+    button {
+      margin: 8px 8px 8px 0;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid #0452A8;
+      border-radius: 6px;
+      background: white;
+      color: #0452A8;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #0452A8;
+      color: white;
+    }
+    
+    .console-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 0;
+    }
+    
+    .console-log div {
+      margin: 2px 0;
+      padding: 2px 0;
+      line-height: 1.4;
+    }
+    
+    .log-info { color: #4fc3f7; }
+    .log-success { color: #81c784; }
+    .log-error { color: #e57373; }
+    .log-warning { color: #ffb74d; }
+    
+    .banner-note {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+    
+    .banner-note strong {
+      color: #856404;
+    }
+    
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+      color: #d63384;
+    }
+    
+    .test-scenarios {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 0;
+    }
+    
+    .test-scenarios h3 {
+      margin-top: 0;
+      color: #0452A8;
+    }
+    
+    .test-scenario {
+      background: #f8f9fa;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border-left: 4px solid #0452A8;
+    }
+    
+    .test-scenario strong {
+      color: #0452A8;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 QA Test Page - Consent Banner + MTM Integration</h1>
+  <p class="subtitle">Complete integration test with simulated MTM behavior</p>
+  
+  <div class="banner-note">
+    <strong>📌 Test Goal:</strong><br>
+    • <strong>Accept/Partial(stats=1)</strong> → Matomo loads and tracks with cookies + visitor ID ✅<br>
+    • <strong>Reject/Partial(stats=0)</strong> → Matomo doesn't load at all ❌<br>
+    • <strong>No tracking before user decision</strong> ⏸️
+  </div>
+  
+  <div class="controls">
+    <h3>🎮 Controls</h3>
+    <button onclick="refreshAll()">🔄 Refresh Status</button>
+    <button onclick="resetAndReload()">🗑️ Reset & Reload</button>
+    <button onclick="showBannerForce()">👁️ Force Show Banner</button>
+    <button onclick="showMTMEvents()">📊 Show MTM Events</button>
+    <button onclick="clearLogs()">🧹 Clear Logs</button>
+    <button onclick="runAllTests()">✅ Run All Tests</button>
+  </div>
+  
+  <div class="status-grid">
+    <div class="status-box">
+      <h3>📋 Consent State</h3>
+      <div id="consent-status">
+        <div class="status-item info">Loading...</div>
+      </div>
+    </div>
+    
+    <div class="status-box">
+      <h3>🔧 Matomo Status</h3>
+      <div id="matomo-status">
+        <div class="status-item info">Checking...</div>
+      </div>
+    </div>
+    
+    <div class="status-box">
+      <h3>🍪 Cookies</h3>
+      <div id="cookie-status">
+        <div class="status-item info">Checking...</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="status-box">
+    <h3>📡 MTM Events (_mtm)</h3>
+    <div id="mtm-events">
+      <div class="status-item info">Waiting...</div>
+    </div>
+  </div>
+  
+  <div class="test-scenarios">
+    <h3>📝 Test Scenarios</h3>
+    
+    <div class="test-scenario">
+      <strong>Test 1: First Visit</strong><br>
+      Expected: Banner shows, no Matomo loaded, no tracking
+    </div>
+    
+    <div class="test-scenario">
+      <strong>Test 2: Accept</strong><br>
+      Expected: Matomo loads, matomo.php request sent, cookies created
+    </div>
+    
+    <div class="test-scenario">
+      <strong>Test 3: Reload After Accept</strong><br>
+      Expected: Matomo loads immediately, banner doesn't show, tracking works
+    </div>
+    
+    <div class="test-scenario">
+      <strong>Test 4: Reject</strong><br>
+      Expected: No Matomo, no tracking, no cookies
+    </div>
+    
+    <div class="test-scenario">
+      <strong>Test 5: Partial Accept (stats=1)</strong><br>
+      Expected: Same as Accept
+    </div>
+    
+    <div class="test-scenario">
+      <strong>Test 6: Partial Reject (stats=0)</strong><br>
+      Expected: Same as Reject
+    </div>
+  </div>
+  
+  <div class="status-box">
+    <h3>💬 Console Log</h3>
+    <div id="console-output" class="console-log"></div>
+  </div>
+
+  <!-- Banner CSS -->
+  <link rel="stylesheet" href="zawbi_banner.css">
+  
+  <!-- Banner JS -->
+  <script src="zawbi_banner.js"></script>
+  
+  <script>
+    // ═══════════════════════════════════════════════════════
+    // Console Logging
+    // ═══════════════════════════════════════════════════════
+    
+    var logs = [];
+    var originalLog = console.log;
+    var originalWarn = console.warn;
+    var originalError = console.error;
+    
+    console.log = function() {
+      logMessage(Array.prototype.slice.call(arguments), 'info');
+      return originalLog.apply(console, arguments);
+    };
+    
+    console.warn = function() {
+      logMessage(Array.prototype.slice.call(arguments), 'warning');
+      return originalWarn.apply(console, arguments);
+    };
+    
+    console.error = function() {
+      logMessage(Array.prototype.slice.call(arguments), 'error');
+      return originalError.apply(console, arguments);
+    };
+    
+    function logMessage(args, type) {
+      var message = args.map(function(arg) {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch(e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' ');
+      
+      logs.push({
+        message: message,
+        timestamp: new Date().toLocaleTimeString(),
+        type: type
+      });
+      
+      updateConsoleOutput();
+    }
+
+    function updateConsoleOutput() {
+      var container = document.getElementById('console-output');
+      container.innerHTML = logs.map(function(log) {
+        return '<div class="log-' + log.type + '">[' + log.timestamp + '] ' + log.message + '</div>';
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearLogs() {
+      logs = [];
+      updateConsoleOutput();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Initialize Banner
+    // ═══════════════════════════════════════════════════════
+    
+    console.log('═══════════════════════════════════════════');
+    console.log('INITIALIZING BANNER');
+    console.log('═══════════════════════════════════════════');
+    
+    MatomoConsentSDK.init({
+      policyUrl: '/polityka-prywatnosci',
+      bannerVersion: '2.0.0-qa-test',
+      cookieTableEnabled: false
+    });
+    
+    MatomoConsentSDK.showBanner();
+    console.log('✅ Banner initialized');
+
+    // ═══════════════════════════════════════════════════════
+    // Status Monitoring
+    // ═══════════════════════════════════════════════════════
+    
+    function checkConsentStatus() {
+      var container = document.getElementById('consent-status');
+      var html = '';
+      
+      var choice = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var consentId = localStorage.getItem('matomoConsentId:v1');
+      
+      var consentGranted = false;
+      if (choice === 'accepted' || (choice === 'custom' && stats === '1')) {
+        consentGranted = true;
+      }
+      
+      if (consentGranted) {
+        html += '<div class="status-item success">✅ GRANTED → Matomo should load</div>';
+      } else if (choice === 'declined' || (choice === 'custom' && stats === '0')) {
+        html += '<div class="status-item error">❌ DENIED → Matomo should NOT load</div>';
+      } else {
+        html += '<div class="status-item info">⏸️ NOT SET → Waiting for decision</div>';
+      }
+      
+      html += '<div class="status-item info">Choice: ' + (choice || 'none') + '</div>';
+      html += '<div class="status-item info">Stats: ' + (stats || 'none') + '</div>';
+      html += '<div class="status-item info">ID: ' + (consentId || 'none') + '</div>';
+      
+      container.innerHTML = html;
+    }
+
+    function checkMatomoStatus() {
+      var container = document.getElementById('matomo-status');
+      var html = '';
+      
+      var matomoLoaded = typeof Matomo !== 'undefined';
+      var paqExists = typeof _paq !== 'undefined';
+      
+      if (matomoLoaded) {
+        html += '<div class="status-item success">✅ matomo.js: LOADED</div>';
+      } else {
+        html += '<div class="status-item error">❌ matomo.js: NOT LOADED</div>';
+      }
+      
+      if (paqExists) {
+        html += '<div class="status-item info">_paq queue: ' + _paq.length + ' commands</div>';
+      }
+      
+      // Validate state
+      var choice = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var shouldLoad = choice === 'accepted' || (choice === 'custom' && stats === '1');
+      
+      if (shouldLoad && !matomoLoaded) {
+        html += '<div class="status-item warning">⚠️ CONSENT GRANTED but Matomo NOT loaded!</div>';
+      } else if (!shouldLoad && matomoLoaded) {
+        html += '<div class="status-item warning">⚠️ NO CONSENT but Matomo IS loaded!</div>';
+      } else if (shouldLoad && matomoLoaded) {
+        html += '<div class="status-item success">✅ STATE OK: Consent + Matomo</div>';
+      } else {
+        html += '<div class="status-item success">✅ STATE OK: No consent + No Matomo</div>';
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function checkCookieStatus() {
+      var container = document.getElementById('cookie-status');
+      var html = '';
+      
+      var cookies = document.cookie.split(';')
+        .map(function(c) { return c.trim(); })
+        .filter(function(c) { return c.includes('_pk_') || c.includes('mtm_'); });
+      
+      if (cookies.length > 0) {
+        html += '<div class="status-item success">✅ Matomo cookies: ' + cookies.length + '</div>';
+        cookies.forEach(function(c) {
+          var name = c.split('=')[0];
+          html += '<div class="status-item info" style="font-size:11px; margin-left:20px;">• ' + name + '</div>';
+        });
+      } else {
+        html += '<div class="status-item info">No Matomo cookies</div>';
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function showMTMEvents() {
+      var container = document.getElementById('mtm-events');
+      var html = '';
+      
+      if (typeof _mtm === 'undefined') {
+        html += '<div class="status-item error">❌ _mtm not defined!</div>';
+      } else {
+        html += '<div class="status-item success">✅ _mtm: ' + _mtm.length + ' items</div>';
+        
+        var events = _mtm.filter(function(item) {
+          return item && item.event;
+        });
+        
+        if (events.length > 0) {
+          html += '<div style="margin-top:10px;">';
+          events.forEach(function(item, i) {
+            var type = 'info';
+            if (item.event.includes('accept')) type = 'success';
+            if (item.event.includes('reject')) type = 'error';
+            
+            html += '<div class="status-item ' + type + '" style="font-size:12px;">';
+            html += '<strong>' + item.event + '</strong>';
+            if (item.consent_statistics !== undefined) {
+              html += ' (stats: ' + item.consent_statistics + ')';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function refreshAll() {
+      checkConsentStatus();
+      checkMatomoStatus();
+      checkCookieStatus();
+      showMTMEvents();
+    }
+
+    function resetAndReload() {
+      if (confirm('Reset all consent data and reload?')) {
+        console.log('🗑️ Resetting consent...');
+        MatomoConsentSDK.resetConsent();
+        
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+        });
+        
+        location.reload();
+      }
+    }
+    
+    function showBannerForce() {
+      MatomoConsentSDK.showBanner({
+        forceShow: true,
+        forceCookiePanel: true
+      });
+    }
+    
+    function runAllTests() {
+      console.log('');
+      console.log('═══════════════════════════════════════════');
+      console.log('RUNNING ALL TESTS');
+      console.log('═══════════════════════════════════════════');
+      console.log('');
+      
+      refreshAll();
+      
+      var choice = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var matomoLoaded = typeof Matomo !== 'undefined';
+      
+      console.log('Test Results:');
+      console.log('─────────────────────────────────────────');
+      console.log('Consent Choice:', choice || 'none');
+      console.log('Stats Enabled:', stats || 'none');
+      console.log('Matomo Loaded:', matomoLoaded);
+      console.log('');
+      
+      var passed = 0;
+      var failed = 0;
+      
+      // Test 1: No consent = no Matomo
+      if (!choice && !matomoLoaded) {
+        console.log('✅ Test 1 PASS: No consent, no Matomo');
+        passed++;
+      } else if (!choice && matomoLoaded) {
+        console.error('❌ Test 1 FAIL: No consent but Matomo loaded!');
+        failed++;
+      }
+      
+      // Test 2: Accept = Matomo loaded
+      if (choice === 'accepted' && matomoLoaded) {
+        console.log('✅ Test 2 PASS: Accepted, Matomo loaded');
+        passed++;
+      } else if (choice === 'accepted' && !matomoLoaded) {
+        console.error('❌ Test 2 FAIL: Accepted but Matomo not loaded!');
+        failed++;
+      }
+      
+      // Test 3: Reject = no Matomo
+      if (choice === 'declined' && !matomoLoaded) {
+        console.log('✅ Test 3 PASS: Rejected, no Matomo');
+        passed++;
+      } else if (choice === 'declined' && matomoLoaded) {
+        console.error('❌ Test 3 FAIL: Rejected but Matomo loaded!');
+        failed++;
+      }
+      
+      // Test 4: Partial accept = Matomo
+      if (choice === 'custom' && stats === '1' && matomoLoaded) {
+        console.log('✅ Test 4 PASS: Partial accept, Matomo loaded');
+        passed++;
+      } else if (choice === 'custom' && stats === '1' && !matomoLoaded) {
+        console.error('❌ Test 4 FAIL: Partial accept but Matomo not loaded!');
+        failed++;
+      }
+      
+      // Test 5: Partial reject = no Matomo
+      if (choice === 'custom' && stats === '0' && !matomoLoaded) {
+        console.log('✅ Test 5 PASS: Partial reject, no Matomo');
+        passed++;
+      } else if (choice === 'custom' && stats === '0' && matomoLoaded) {
+        console.error('❌ Test 5 FAIL: Partial reject but Matomo loaded!');
+        failed++;
+      }
+      
+      console.log('');
+      console.log('─────────────────────────────────────────');
+      console.log('Results: ' + passed + ' passed, ' + failed + ' failed');
+      console.log('═══════════════════════════════════════════');
+    }
+
+    // Auto-refresh every 2 seconds
+    setInterval(refreshAll, 2000);
+
+    // Initial load
+    setTimeout(function() {
+      refreshAll();
+      
+      console.log('');
+      console.log('═══════════════════════════════════════════');
+      console.log('QA TEST PAGE READY');
+      console.log('═══════════════════════════════════════════');
+      console.log('');
+      console.log('Banner events pushed to _mtm:');
+      console.log('• cookie_banner_display');
+      console.log('• cookie_accept');
+      console.log('• cookie_reject');
+      console.log('• cookie_partial');
+      console.log('');
+      console.log('MTM simulates:');
+      console.log('• Bootstrap tag (page load check)');
+      console.log('• Apply consent tag (event listener)');
+      console.log('');
+    }, 500);
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Simulated MTM Container                                   -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <script>
+    var _mtm = window._mtm = window._mtm || [];
+    _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+    
+    console.log('[MTM] Container initialized');
+    
+    // ═══════════════════════════════════════════════════════
+    // Simulate Bootstrap Tag (Page Load)
+    // ═══════════════════════════════════════════════════════
+    
+    (function() {
+      console.log('[MTM Bootstrap] Checking consent state...');
+      
+      var choice = null;
+      var statsEnabled = false;
+      
+      try {
+        choice = localStorage.getItem('matomoConsentChoice:v2');
+        var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+        statsEnabled = (stats === '1');
+      } catch (e) {}
+      
+      var consentGranted = false;
+      if (choice === 'accepted' || (choice === 'custom' && statsEnabled)) {
+        consentGranted = true;
+      }
+      
+      console.log('[MTM Bootstrap] Consent granted:', consentGranted);
+      
+      if (!consentGranted) {
+        console.log('[MTM Bootstrap] No consent - Matomo NOT loaded');
+        return;
+      }
+      
+      console.log('[MTM Bootstrap] Loading Matomo...');
+      loadMatomo('bootstrap');
+    })();
+    
+    // ═══════════════════════════════════════════════════════
+    // Listen for Consent Events
+    // ═══════════════════════════════════════════════════════
+    
+    var originalPush = _mtm.push;
+    _mtm.push = function(data) {
+      if (data && data.event) {
+        console.log('[MTM Event]', data.event, data);
+        
+        // Simulate Apply Consent tag
+        var consentGranted = false;
+        
+        if (data.event === 'cookie_accept') {
+          consentGranted = true;
+        } else if (data.event === 'cookie_partial' && data.consent_statistics === 1) {
+          consentGranted = true;
+        }
+        
+        if (consentGranted) {
+          console.log('[MTM Apply Consent] Consent granted - loading Matomo');
+          setTimeout(function() {
+            loadMatomo('user_action');
+          }, 100);
+        } else if (data.event.includes('cookie_reject') || 
+                   (data.event === 'cookie_partial' && data.consent_statistics === 0)) {
+          console.log('[MTM Apply Consent] Consent denied - Matomo NOT loaded');
+        }
+      }
+      return originalPush.apply(this, arguments);
+    };
+    
+    // ═══════════════════════════════════════════════════════
+    // Load Matomo Function
+    // ═══════════════════════════════════════════════════════
+    
+    function loadMatomo(source) {
+      if (typeof Matomo !== 'undefined') {
+        console.log('[MTM] Matomo already loaded, sending pageview');
+        window._paq = window._paq || [];
+        _paq.push(['trackPageView']);
+        return;
+      }
+      
+      window._paq = window._paq || [];
+      
+      var u = "https://pi-ogp.coi.gov.pl/";
+      _paq.push(['setTrackerUrl', u + 'matomo.php']);
+      _paq.push(['setSiteId', '1']);
+      
+      var d = document;
+      var g = d.createElement('script');
+      var s = d.getElementsByTagName('script')[0];
+      g.async = true;
+      g.src = u + 'matomo.js';
+      
+      g.onload = function() {
+        console.log('[MTM] ✅ Matomo loaded from:', source);
+        console.log('[MTM] Sending trackPageView...');
+        
+        _paq.push(['trackPageView']);
+        _paq.push(['enableLinkTracking']);
+        
+        console.log('[MTM] ✅ trackPageView sent');
+      };
+      
+      g.onerror = function() {
+        console.error('[MTM] ❌ Failed to load Matomo!');
+        console.log('[MTM] This is expected in test environment (no real Matomo server)');
+      };
+      
+      s.parentNode.insertBefore(g, s);
+    }
+  </script>
+</body>
+</html>
