@@ -53,11 +53,11 @@ Stwórz dodatkowy trigger dla wszystkich consent events:
 ```
 Name: Custom Event - All Consent Events
 Type: Custom Event
-Event Name: (use regex)
-  ^cookie_accept$|^cookie_reject$|^cookie_partial$
+Event Name: 
+  cookie_accept|cookie_reject|cookie_partial
 ```
 
-**Uwaga:** Można użyć osobnych triggerów dla każdego eventu jak w innych tagach.
+**Uwaga:** Należy użyć osobnych triggerów dla każdego eventu jak w innych tagach.
 
 ---
 
