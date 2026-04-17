@@ -1,8 +1,3 @@
-/**
- * Matomo Consent Banner SDK
- * Wersja: 2.0.0 - Zarządzanie przez MTM
- */
-
 "use strict";
 
 function _typeof(obj) { 
@@ -80,6 +75,7 @@ function _typeof(obj) {
   var runtimeConfig = Object.assign({}, DEFAULT_CONFIG);
   var bannerEl = null;
   var handlersBound = false;
+  var bootstrapStatePushed = false;
 
   // ---- FUNKCJE POMOCNICZE ----
 
@@ -125,6 +121,53 @@ function _typeof(obj) {
     // Push do MTM data layer
     window._mtm = window._mtm || [];
     window._mtm.push(eventData);
+  }
+
+  /**
+   * Bootstrap zapisanego stanu zgody do _mtm przy każdym page load
+   * Dzięki temu DLV - consent_statistics będzie dostępne także po reloadzie
+   * bez konieczności ponownego kliknięcia w banner.
+   */
+  function pushStoredConsentState() {
+    if (bootstrapStatePushed) {
+      return;
+    }
+
+    var cfg = runtimeConfig || DEFAULT_CONFIG;
+    var choice = null;
+    var stats = null;
+    var statsEnabled = null;
+
+    try {
+      choice = localStorage.getItem(LS_KEY_CHOICE);
+    } catch (e) {}
+
+    try {
+      stats = localStorage.getItem(LS_KEY_STATS);
+    } catch (e) {}
+
+    if (choice === 'accepted') {
+      statsEnabled = true;
+    } else if (choice === 'declined') {
+      statsEnabled = false;
+    } else if (choice === 'custom') {
+      statsEnabled = (stats === '1' || stats === 'true');
+    } else {
+      return;
+    }
+
+    window._mtm = window._mtm || [];
+    window._mtm.push({
+      event: 'consent_state_bootstrap',
+      consent_id: getOrCreateConsentId(),
+      consent_choice: choice,
+      consent_statistics: statsEnabled ? 1 : 0,
+      consent_url: location.pathname,
+      banner_version: cfg.bannerVersion || '2.0.0',
+      consent_datetime: new Date().toISOString()
+    });
+
+    bootstrapStatePushed = true;
   }
 
   /**
@@ -245,6 +288,8 @@ function _typeof(obj) {
     try {
       localStorage.removeItem(LS_KEY_STATS);
     } catch (e) {}
+
+    bootstrapStatePushed = false;
   }
 
   /**
@@ -341,6 +386,13 @@ function _typeof(obj) {
    */
   function init(options) {
     runtimeConfig = Object.assign({}, runtimeConfig, options || {});
+
+    // Bootstrap zapisanego consent do _mtm przy każdym page load
+    // tylko jeśli nie wymuszamy resetu
+    if (!runtimeConfig.resetChoice) {
+      pushStoredConsentState();
+    }
+
     return runtimeConfig;
   }
 
@@ -405,6 +457,8 @@ function _typeof(obj) {
     try {
       localStorage.removeItem(LS_KEY_STATS);
     } catch (e) {}
+
+    bootstrapStatePushed = false;
   }
 
   /**
@@ -418,12 +472,21 @@ function _typeof(obj) {
     }
   }
 
+  /**
+   * Ręczny bootstrap stanu zgody do _mtm
+   * Przydatne debugowo lub gdybyś kiedyś chciał wywołać to jawnie.
+   */
+  function bootstrapConsentState() {
+    pushStoredConsentState();
+  }
+
   // Eksportuj publiczne API
   return {
     init: init,
     showBanner: showBanner,
     resetConsent: resetConsent,
     getConsentState: getConsentState,
+    bootstrapConsentState: bootstrapConsentState,
     _getCurrentConfig: function () {
       return runtimeConfig;
     }
