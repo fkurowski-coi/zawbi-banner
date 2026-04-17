@@ -3,42 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QA Test - Consent Banner + MTM Integration</title>
+  <title>Test QA - Consent Banner + MTM</title>
   <style>
     * { box-sizing: border-box; }
-
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      padding: 20px;
+    
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 20px; 
       max-width: 1400px;
       margin: 0 auto;
       background: #f0f2f5;
     }
-
+    
     h1 {
       color: #0452A8;
       margin-bottom: 10px;
     }
-
+    
     .subtitle {
       color: #666;
       margin-bottom: 30px;
     }
-
+    
     .status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 20px;
       margin: 20px 0;
     }
-
+    
     .status-box {
       background: white;
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-
+    
     .status-box h3 {
       margin-top: 0;
       color: #333;
@@ -47,7 +47,7 @@
       padding-bottom: 8px;
       margin-bottom: 12px;
     }
-
+    
     .status-item {
       padding: 8px 12px;
       margin: 6px 0;
@@ -55,33 +55,32 @@
       background: #f9f9f9;
       font-size: 14px;
       font-family: 'Courier New', monospace;
-      word-break: break-word;
     }
-
+    
     .status-item.success {
       border-color: #4caf50;
       background: #e8f5e9;
       color: #2e7d32;
     }
-
+    
     .status-item.error {
       border-color: #f44336;
       background: #ffebee;
       color: #c62828;
     }
-
+    
     .status-item.info {
       border-color: #2196f3;
       background: #e3f2fd;
       color: #1565c0;
     }
-
+    
     .status-item.warning {
       border-color: #ff9800;
       background: #fff3e0;
       color: #e65100;
     }
-
+    
     .controls {
       background: white;
       padding: 20px;
@@ -89,7 +88,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       margin: 20px 0;
     }
-
+    
     button {
       margin: 8px 8px 8px 0;
       padding: 10px 20px;
@@ -102,12 +101,12 @@
       font-weight: 600;
       transition: all 0.2s;
     }
-
+    
     button:hover {
       background: #0452A8;
       color: white;
     }
-
+    
     .console-log {
       background: #1e1e1e;
       color: #d4d4d4;
@@ -119,18 +118,18 @@
       overflow-y: auto;
       margin: 0;
     }
-
+    
     .console-log div {
       margin: 2px 0;
       padding: 2px 0;
       line-height: 1.4;
     }
-
+    
     .log-info { color: #4fc3f7; }
     .log-success { color: #81c784; }
     .log-error { color: #e57373; }
     .log-warning { color: #ffb74d; }
-
+    
     .banner-note {
       background: #fff3cd;
       border: 2px solid #ffc107;
@@ -138,11 +137,11 @@
       border-radius: 6px;
       margin: 20px 0;
     }
-
+    
     .banner-note strong {
       color: #856404;
     }
-
+    
     code {
       background: #f5f5f5;
       padding: 2px 6px;
@@ -151,7 +150,7 @@
       font-size: 0.9em;
       color: #d63384;
     }
-
+    
     .test-scenarios {
       background: white;
       padding: 20px;
@@ -159,12 +158,12 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       margin: 20px 0;
     }
-
+    
     .test-scenarios h3 {
       margin-top: 0;
       color: #0452A8;
     }
-
+    
     .test-scenario {
       background: #f8f9fa;
       padding: 12px;
@@ -172,564 +171,525 @@
       border-radius: 4px;
       border-left: 4px solid #0452A8;
     }
-
+    
     .test-scenario strong {
       color: #0452A8;
     }
   </style>
 </head>
 <body>
-  <h1>🧪 QA Test Page - Consent Banner + MTM Integration</h1>
-  <p class="subtitle">Test page using only Matomo Tag Manager container <code>container_8JgEPMOA.js</code></p>
-
+  <h1>🧪 Test QA - Consent Banner + MTM</h1>
+  <p class="subtitle">Kompletna integracja z symulacją MTM</p>
+  
   <div class="banner-note">
-    <strong>📌 Test Goal:</strong><br>
-    • This page loads only the MTM container script and never loads <code>matomo.js</code> directly<br>
-    • If Matomo SDK appears, it should be because the MTM container loaded it<br>
-    • Banner still pushes events to <code>_mtm</code>, and the container decides what to do next
+    <strong>📌 Cel Testu:</strong><br>
+    • <strong>Accept/Partial(stats=1)</strong> → Matomo ładuje się i trackuje z cookies + visitor ID ✅<br>
+    • <strong>Reject/Partial(stats=0)</strong> → Matomo w ogóle się nie ładuje ❌<br>
+    • <strong>Brak trackingu przed decyzją usera</strong> ⏸️
   </div>
-
+  
   <div class="controls">
-    <h3>🎮 Controls</h3>
-    <button onclick="refreshAll()">🔄 Refresh Status</button>
-    <button onclick="resetAndReload()">🗑️ Reset & Reload</button>
-    <button onclick="showBannerForce()">👁️ Force Show Banner</button>
-    <button onclick="showMTMEvents()">📊 Show MTM Events</button>
-    <button onclick="clearLogs()">🧹 Clear Logs</button>
-    <button onclick="runAllTests()">✅ Run All Tests</button>
+    <h3>🎮 Kontrolki</h3>
+    <button onclick="odswiezWszystko()">🔄 Odśwież Status</button>
+    <button onclick="resetujIReload()">🗑️ Reset & Reload</button>
+    <button onclick="pokazBannerWymuszone()">👁️ Wymuś Banner</button>
+    <button onclick="pokazEventyMTM()">📊 Pokaż Eventy MTM</button>
+    <button onclick="wyczyscLogi()">🧹 Wyczyść Logi</button>
+    <button onclick="uruchomWszystkieTesty()">✅ Uruchom Wszystkie Testy</button>
   </div>
-
+  
   <div class="status-grid">
     <div class="status-box">
-      <h3>📋 Consent State</h3>
+      <h3>📋 Stan Zgody</h3>
       <div id="consent-status">
-        <div class="status-item info">Loading...</div>
+        <div class="status-item info">Ładowanie...</div>
       </div>
     </div>
-
+    
     <div class="status-box">
-      <h3>🔧 MTM / Matomo Status</h3>
+      <h3>🔧 Status Matomo</h3>
       <div id="matomo-status">
-        <div class="status-item info">Checking...</div>
+        <div class="status-item info">Sprawdzanie...</div>
       </div>
     </div>
-
+    
     <div class="status-box">
       <h3>🍪 Cookies</h3>
       <div id="cookie-status">
-        <div class="status-item info">Checking...</div>
+        <div class="status-item info">Sprawdzanie...</div>
       </div>
     </div>
   </div>
-
+  
   <div class="status-box">
-    <h3>📡 MTM Events (_mtm)</h3>
+    <h3>📡 Eventy MTM (_mtm)</h3>
     <div id="mtm-events">
-      <div class="status-item info">Waiting...</div>
+      <div class="status-item info">Oczekiwanie...</div>
     </div>
   </div>
-
+  
   <div class="test-scenarios">
-    <h3>📝 Test Scenarios</h3>
-
+    <h3>📝 Scenariusze Testowe</h3>
+    
     <div class="test-scenario">
-      <strong>Test 1: First Visit</strong><br>
-      Expected: Banner shows, MTM container is present, page itself does not directly load <code>matomo.js</code>
+      <strong>Test 1: Pierwsza Wizyta</strong><br>
+      Oczekiwane: Banner pojawia się, brak Matomo, brak trackingu
     </div>
-
+    
     <div class="test-scenario">
       <strong>Test 2: Accept</strong><br>
-      Expected: Banner pushes accept event to <code>_mtm</code>, then MTM may load Matomo SDK and tracking
+      Oczekiwane: Matomo ładuje się, request matomo.php wysłany, cookies stworzone
     </div>
-
+    
     <div class="test-scenario">
-      <strong>Test 3: Reload After Accept</strong><br>
-      Expected: Banner does not reopen automatically, MTM evaluates stored consent on load
+      <strong>Test 3: Reload Po Accept</strong><br>
+      Oczekiwane: Matomo ładuje się natychmiast, banner nie pojawia się, tracking działa
     </div>
-
+    
     <div class="test-scenario">
       <strong>Test 4: Reject</strong><br>
-      Expected: Banner pushes reject event, MTM should keep Matomo inactive
+      Oczekiwane: Brak Matomo, brak trackingu, brak cookies
     </div>
-
+    
     <div class="test-scenario">
       <strong>Test 5: Partial Accept (stats=1)</strong><br>
-      Expected: Banner pushes partial event with analytics enabled, MTM may load Matomo SDK
+      Oczekiwane: Jak Accept
     </div>
-
+    
     <div class="test-scenario">
       <strong>Test 6: Partial Reject (stats=0)</strong><br>
-      Expected: Banner pushes partial event with analytics disabled, MTM should keep Matomo inactive
+      Oczekiwane: Jak Reject
     </div>
   </div>
-
+  
   <div class="status-box">
     <h3>💬 Console Log</h3>
     <div id="console-output" class="console-log"></div>
   </div>
 
+  <!-- CSS Bannera -->
   <link rel="stylesheet" href="zawbi_banner.css">
+  
+  <!-- JS Bannera -->
   <script src="zawbi_banner.js"></script>
-
+  
   <script>
-    var logs = [];
-    var mtmEventHistory = [];
+    // ═══════════════════════════════════════════════════════
+    // Przechwytywanie Console
+    // ═══════════════════════════════════════════════════════
+    
+    var logi = [];
     var originalLog = console.log;
     var originalWarn = console.warn;
     var originalError = console.error;
-
-    function stringifyArg(arg) {
-      if (typeof arg === 'object' && arg !== null) {
-        try {
-          return JSON.stringify(arg, null, 2);
-        } catch (e) {
-          return String(arg);
-        }
-      }
-      return String(arg);
-    }
-
-    function logMessage(args, type) {
-      var message = args.map(stringifyArg).join(' ');
-
-      logs.push({
-        message: message,
-        timestamp: new Date().toLocaleTimeString(),
-        type: type
-      });
-
-      updateConsoleOutput();
-    }
-
+    
     console.log = function() {
-      logMessage(Array.prototype.slice.call(arguments), 'info');
+      logujWiadomosc(Array.prototype.slice.call(arguments), 'info');
       return originalLog.apply(console, arguments);
     };
-
+    
     console.warn = function() {
-      logMessage(Array.prototype.slice.call(arguments), 'warning');
+      logujWiadomosc(Array.prototype.slice.call(arguments), 'warning');
       return originalWarn.apply(console, arguments);
     };
-
+    
     console.error = function() {
-      logMessage(Array.prototype.slice.call(arguments), 'error');
+      logujWiadomosc(Array.prototype.slice.call(arguments), 'error');
       return originalError.apply(console, arguments);
     };
+    
+    function logujWiadomosc(args, typ) {
+      var wiadomosc = args.map(function(arg) {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch(e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' ');
+      
+      logi.push({
+        wiadomosc: wiadomosc,
+        czas: new Date().toLocaleTimeString(),
+        typ: typ
+      });
+      
+      aktualizujConsoleOutput();
+    }
 
-    function updateConsoleOutput() {
-      var container = document.getElementById('console-output');
-      container.innerHTML = logs.map(function(log) {
-        return '<div class="log-' + log.type + '">[' + log.timestamp + '] ' + escapeHtml(log.message) + '</div>';
+    function aktualizujConsoleOutput() {
+      var kontener = document.getElementById('console-output');
+      kontener.innerHTML = logi.map(function(log) {
+        return '<div class="log-' + log.typ + '">[' + log.czas + '] ' + log.wiadomosc + '</div>';
       }).join('');
-      container.scrollTop = container.scrollHeight;
+      kontener.scrollTop = kontener.scrollHeight;
     }
 
-    function clearLogs() {
-      logs = [];
-      updateConsoleOutput();
+    function wyczyscLogi() {
+      logi = [];
+      aktualizujConsoleOutput();
     }
 
-    function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
+    // ═══════════════════════════════════════════════════════
+    // Inicjalizacja Bannera
+    // ═══════════════════════════════════════════════════════
+    
+    console.log('═══════════════════════════════════════════');
+    console.log('INICJALIZACJA BANNERA');
+    console.log('═══════════════════════════════════════════');
+    
+    MatomoConsentSDK.init({
+      policyUrl: '/polityka-prywatnosci',
+      bannerVersion: '2.0.0-qa-test',
+      cookieTableEnabled: false
+    });
+    
+    MatomoConsentSDK.showBanner();
+    console.log('✅ Banner zainicjalizowany');
 
-    function getConsentState() {
-      var choice = localStorage.getItem('matomoConsentChoice:v2');
+    // ═══════════════════════════════════════════════════════
+    // Monitoring Statusu
+    // ═══════════════════════════════════════════════════════
+    
+    function sprawdzStatusZgody() {
+      var kontener = document.getElementById('consent-status');
+      var html = '';
+      
+      var wybor = localStorage.getItem('matomoConsentChoice:v2');
       var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
       var consentId = localStorage.getItem('matomoConsentId:v1');
-      var granted = choice === 'accepted' || (choice === 'custom' && stats === '1');
-      var denied = choice === 'declined' || (choice === 'custom' && stats === '0');
-
-      return {
-        choice: choice,
-        stats: stats,
-        consentId: consentId,
-        granted: granted,
-        denied: denied
-      };
-    }
-
-    function getScriptSources() {
-      return Array.prototype.slice.call(document.scripts).map(function(script) {
-        return script.src || '';
-      }).filter(Boolean);
-    }
-
-    function getMtmContainerScripts() {
-      return getScriptSources().filter(function(src) {
-        return src.indexOf('container_8JgEPMOA.js') !== -1;
-      });
-    }
-
-    function getMatomoSdkScripts() {
-      return getScriptSources().filter(function(src) {
-        return src.indexOf('matomo.js') !== -1;
-      });
-    }
-
-    function isMtmContainerLoaded() {
-      return !!window.__mtmContainerLoaded || getMtmContainerScripts().length > 0;
-    }
-
-    function isMatomoSdkLoaded() {
-      return typeof window.Matomo !== 'undefined' || getMatomoSdkScripts().length > 0;
-    }
-
-    function hookMtmPush() {
-      window._mtm = window._mtm || [];
-
-      if (window._mtm.__qaHookInstalled) {
-        return;
+      
+      var consentUdzielony = false;
+      if (wybor === 'accepted' || (wybor === 'custom' && stats === '1')) {
+        consentUdzielony = true;
       }
-
-      mtmEventHistory = window._mtm.filter(function(item) {
-        return item && item.event;
-      }).slice();
-
-      var originalPush = window._mtm.push;
-      window._mtm.push = function() {
-        for (var i = 0; i < arguments.length; i++) {
-          var item = arguments[i];
-          if (item && item.event) {
-            mtmEventHistory.push(item);
-            console.log('[MTM Event]', item.event, item);
-          }
-        }
-        return originalPush.apply(window._mtm, arguments);
-      };
-
-      window._mtm.__qaHookInstalled = true;
-    }
-
-    function initBanner() {
-      console.log('═══════════════════════════════════════════');
-      console.log('INITIALIZING BANNER');
-      console.log('═══════════════════════════════════════════');
-
-      if (typeof window.MatomoConsentSDK === 'undefined') {
-        console.error('MatomoConsentSDK is not available. Check zawbi_banner.js.');
-        return;
+      
+      if (consentUdzielony) {
+        html += '<div class="status-item success">✅ UDZIELONY → Matomo powinno się załadować</div>';
+      } else if (wybor === 'declined' || (wybor === 'custom' && stats === '0')) {
+        html += '<div class="status-item error">❌ ODRZUCONY → Matomo NIE powinno się załadować</div>';
+      } else {
+        html += '<div class="status-item info">⏸️ BRAK → Oczekiwanie na decyzję</div>';
       }
-
-      window.MatomoConsentSDK.init({
-        policyUrl: '/polityka-prywatnosci',
-        bannerVersion: '2.1.0-qa-mtm-only',
-        cookieTableEnabled: false
-      });
-
-      window.MatomoConsentSDK.showBanner();
-      console.log('✅ Banner initialized');
+      
+      html += '<div class="status-item info">Wybór: ' + (wybor || 'brak') + '</div>';
+      html += '<div class="status-item info">Stats: ' + (stats || 'brak') + '</div>';
+      html += '<div class="status-item info">ID: ' + (consentId || 'brak') + '</div>';
+      
+      kontener.innerHTML = html;
     }
 
-    function checkConsentStatus() {
-      var container = document.getElementById('consent-status');
-      var state = getConsentState();
+    function sprawdzStatusMatomo() {
+      var kontener = document.getElementById('matomo-status');
       var html = '';
-
-      if (state.granted) {
-        html += '<div class="status-item success">✅ GRANTED → MTM may load Matomo SDK</div>';
-      } else if (state.denied) {
-        html += '<div class="status-item error">❌ DENIED → MTM should keep Matomo inactive</div>';
+      
+      var matomoZaladowane = typeof Matomo !== 'undefined';
+      var paqIstnieje = typeof _paq !== 'undefined';
+      
+      if (matomoZaladowane) {
+        html += '<div class="status-item success">✅ matomo.js: ZAŁADOWANE</div>';
       } else {
-        html += '<div class="status-item info">⏸️ NOT SET → Waiting for decision</div>';
+        html += '<div class="status-item error">❌ matomo.js: NIE ZAŁADOWANE</div>';
       }
-
-      html += '<div class="status-item info">Choice: ' + (state.choice || 'none') + '</div>';
-      html += '<div class="status-item info">Stats: ' + (state.stats || 'none') + '</div>';
-      html += '<div class="status-item info">ID: ' + (state.consentId || 'none') + '</div>';
-
-      container.innerHTML = html;
+      
+      if (paqIstnieje) {
+        html += '<div class="status-item info">_paq kolejka: ' + _paq.length + ' komend</div>';
+      }
+      
+      // Walidacja stanu
+      var wybor = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var powinnoZaladowac = wybor === 'accepted' || (wybor === 'custom' && stats === '1');
+      
+      if (powinnoZaladowac && !matomoZaladowane) {
+        html += '<div class="status-item warning">⚠️ CONSENT UDZIELONY ale Matomo NIE załadowane!</div>';
+      } else if (!powinnoZaladowac && matomoZaladowane) {
+        html += '<div class="status-item warning">⚠️ BRAK CONSENT ale Matomo JEST załadowane!</div>';
+      } else if (powinnoZaladowac && matomoZaladowane) {
+        html += '<div class="status-item success">✅ STAN OK: Consent + Matomo</div>';
+      } else {
+        html += '<div class="status-item success">✅ STAN OK: Brak consent + Brak Matomo</div>';
+      }
+      
+      kontener.innerHTML = html;
     }
 
-    function checkMatomoStatus() {
-      var container = document.getElementById('matomo-status');
+    function sprawdzStatusCookies() {
+      var kontener = document.getElementById('cookie-status');
       var html = '';
-      var state = getConsentState();
-      var mtmLoaded = isMtmContainerLoaded();
-      var matomoLoaded = isMatomoSdkLoaded();
-      var paqExists = typeof window._paq !== 'undefined';
-      var mtmScripts = getMtmContainerScripts();
-      var matomoScripts = getMatomoSdkScripts();
-
-      if (mtmLoaded) {
-        html += '<div class="status-item success">✅ MTM container present</div>';
-      } else {
-        html += '<div class="status-item error">❌ MTM container missing</div>';
-      }
-
-      html += '<div class="status-item info">Container scripts found: ' + mtmScripts.length + '</div>';
-
-      if (matomoLoaded) {
-        html += '<div class="status-item success">✅ Matomo SDK detected</div>';
-      } else {
-        html += '<div class="status-item info">Matomo SDK not detected yet</div>';
-      }
-
-      if (paqExists) {
-        html += '<div class="status-item info">_paq queue exists (' + window._paq.length + ' items)</div>';
-      } else {
-        html += '<div class="status-item info">_paq queue not present</div>';
-      }
-
-      html += '<div class="status-item info">matomo.js scripts detected: ' + matomoScripts.length + '</div>';
-
-      if (state.granted && !matomoLoaded) {
-        html += '<div class="status-item warning">⚠️ Consent granted, but Matomo SDK is not visible yet. MTM may still be deciding or the container rule did not fire.</div>';
-      } else if (state.denied && matomoLoaded) {
-        html += '<div class="status-item warning">⚠️ Consent denied, but Matomo SDK is still visible. Check your MTM rules.</div>';
-      } else if (state.granted && matomoLoaded) {
-        html += '<div class="status-item success">✅ State looks coherent: consent granted and Matomo SDK detected</div>';
-      } else if (state.denied && !matomoLoaded) {
-        html += '<div class="status-item success">✅ State looks coherent: consent denied and Matomo SDK not detected</div>';
-      } else {
-        html += '<div class="status-item info">ℹ️ Waiting for a consent decision</div>';
-      }
-
-      container.innerHTML = html;
-    }
-
-    function checkCookieStatus() {
-      var container = document.getElementById('cookie-status');
-      var html = '';
-
+      
       var cookies = document.cookie.split(';')
         .map(function(c) { return c.trim(); })
-        .filter(function(c) {
-          return c && (c.indexOf('_pk_') !== -1 || c.indexOf('mtm_') !== -1);
-        });
-
+        .filter(function(c) { return c.includes('_pk_') || c.includes('mtm_'); });
+      
       if (cookies.length > 0) {
-        html += '<div class="status-item success">✅ Matomo/MTM cookies: ' + cookies.length + '</div>';
+        html += '<div class="status-item success">✅ Cookies Matomo: ' + cookies.length + '</div>';
         cookies.forEach(function(c) {
-          var name = c.split('=')[0];
-          html += '<div class="status-item info" style="font-size:11px; margin-left:20px;">• ' + escapeHtml(name) + '</div>';
+          var nazwa = c.split('=')[0];
+          html += '<div class="status-item info" style="font-size:11px; margin-left:20px;">• ' + nazwa + '</div>';
         });
       } else {
-        html += '<div class="status-item info">No Matomo/MTM cookies found</div>';
+        html += '<div class="status-item info">Brak cookies Matomo</div>';
       }
-
-      container.innerHTML = html;
+      
+      kontener.innerHTML = html;
     }
 
-    function showMTMEvents() {
-      var container = document.getElementById('mtm-events');
+    function pokazEventyMTM() {
+      var kontener = document.getElementById('mtm-events');
       var html = '';
-
-      if (typeof window._mtm === 'undefined') {
-        html += '<div class="status-item error">❌ _mtm not defined</div>';
-        container.innerHTML = html;
-        return;
-      }
-
-      var events = mtmEventHistory.length
-        ? mtmEventHistory
-        : window._mtm.filter(function(item) { return item && item.event; });
-
-      html += '<div class="status-item success">✅ _mtm available: ' + window._mtm.length + ' items</div>';
-      html += '<div class="status-item info">Tracked event objects: ' + events.length + '</div>';
-
-      if (events.length > 0) {
-        html += '<div style="margin-top:10px;">';
-        events.forEach(function(item) {
-          var type = 'info';
-          var eventName = item.event || '';
-
-          if (eventName.indexOf('accept') !== -1) type = 'success';
-          if (eventName.indexOf('reject') !== -1) type = 'error';
-          if (eventName.indexOf('partial') !== -1) type = 'warning';
-
-          html += '<div class="status-item ' + type + '" style="font-size:12px;">';
-          html += '<strong>' + escapeHtml(eventName) + '</strong>';
-          if (item.consent_statistics !== undefined) {
-            html += ' (stats: ' + escapeHtml(item.consent_statistics) + ')';
-          }
-          html += '</div>';
+      
+      if (typeof _mtm === 'undefined') {
+        html += '<div class="status-item error">❌ _mtm nie zdefiniowane!</div>';
+      } else {
+        html += '<div class="status-item success">✅ _mtm: ' + _mtm.length + ' itemów</div>';
+        
+        var eventy = _mtm.filter(function(item) {
+          return item && item.event;
         });
-        html += '</div>';
-      }
-
-      container.innerHTML = html;
-    }
-
-    function refreshAll() {
-      checkConsentStatus();
-      checkMatomoStatus();
-      checkCookieStatus();
-      showMTMEvents();
-    }
-
-    function removeNamedCookie(name) {
-      var expires = 'expires=Thu, 01 Jan 1970 00:00:00 UTC';
-      document.cookie = name + '=;' + expires + ';path=/';
-      document.cookie = name + '=;' + expires + ';path=/;domain=' + location.hostname;
-      if (location.hostname.indexOf('.') !== -1) {
-        document.cookie = name + '=;' + expires + ';path=/;domain=.' + location.hostname;
-      }
-    }
-
-    function resetAndReload() {
-      if (!confirm('Reset consent test data and reload?')) {
-        return;
-      }
-
-      console.log('🗑️ Resetting consent test data...');
-
-      var keysToRemove = [
-        'matomoConsentChoice:v2',
-        'matomoConsentStatsEnabled:v1',
-        'matomoConsentId:v1'
-      ];
-
-      keysToRemove.forEach(function(key) {
-        localStorage.removeItem(key);
-      });
-
-      if (typeof window.MatomoConsentSDK !== 'undefined' && typeof window.MatomoConsentSDK.resetConsent === 'function') {
-        try {
-          window.MatomoConsentSDK.resetConsent();
-        } catch (e) {
-          console.warn('MatomoConsentSDK.resetConsent failed:', e);
+        
+        if (eventy.length > 0) {
+          html += '<div style="margin-top:10px;">';
+          eventy.forEach(function(item, i) {
+            var typ = 'info';
+            if (item.event.includes('accept')) typ = 'success';
+            if (item.event.includes('reject')) typ = 'error';
+            
+            html += '<div class="status-item ' + typ + '" style="font-size:12px;">';
+            html += '<strong>' + item.event + '</strong>';
+            if (item.consent_statistics !== undefined) {
+              html += ' (stats: ' + item.consent_statistics + ')';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
         }
       }
-
-      document.cookie.split(';').forEach(function(cookie) {
-        var name = cookie.split('=')[0].trim();
-        if (name.indexOf('_pk_') !== -1 || name.indexOf('mtm_') !== -1) {
-          removeNamedCookie(name);
-        }
-      });
-
-      location.reload();
+      
+      kontener.innerHTML = html;
     }
 
-    function showBannerForce() {
-      if (typeof window.MatomoConsentSDK === 'undefined') {
-        console.error('MatomoConsentSDK is not available.');
-        return;
-      }
+    function odswiezWszystko() {
+      sprawdzStatusZgody();
+      sprawdzStatusMatomo();
+      sprawdzStatusCookies();
+      pokazEventyMTM();
+    }
 
-      window.MatomoConsentSDK.showBanner({
+    function resetujIReload() {
+      if (confirm('Zresetować wszystkie dane consent i przeładować?')) {
+        console.log('🗑️ Resetowanie consent...');
+        MatomoConsentSDK.resetConsent();
+        
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+        });
+        
+        location.reload();
+      }
+    }
+    
+    function pokazBannerWymuszone() {
+      MatomoConsentSDK.showBanner({
         forceShow: true,
         forceCookiePanel: true
       });
     }
-
-    function runAllTests() {
+    
+    function uruchomWszystkieTesty() {
       console.log('');
       console.log('═══════════════════════════════════════════');
-      console.log('RUNNING ALL TESTS');
+      console.log('URUCHOMIENIE WSZYSTKICH TESTÓW');
       console.log('═══════════════════════════════════════════');
       console.log('');
-
-      refreshAll();
-
-      var state = getConsentState();
-      var mtmLoaded = isMtmContainerLoaded();
-      var matomoLoaded = isMatomoSdkLoaded();
-      var containerScripts = getMtmContainerScripts();
-
-      var passed = 0;
-      var failed = 0;
-
-      function pass(message) {
-        passed++;
-        console.log('✅ ' + message);
-      }
-
-      function fail(message) {
-        failed++;
-        console.error('❌ ' + message);
-      }
-
-      if (mtmLoaded && containerScripts.length === 1) {
-        pass('MTM container script detected exactly once');
-      } else {
-        fail('Expected exactly one MTM container script, found ' + containerScripts.length);
-      }
-
-      if (!state.choice && !matomoLoaded) {
-        pass('No consent yet and Matomo SDK not detected');
-      } else if (!state.choice && matomoLoaded) {
-        fail('No consent yet, but Matomo SDK is already visible');
-      }
-
-      if (state.choice === 'accepted' && matomoLoaded) {
-        pass('Accepted consent and Matomo SDK detected');
-      } else if (state.choice === 'accepted' && !matomoLoaded) {
-        fail('Accepted consent, but Matomo SDK not detected');
-      }
-
-      if (state.choice === 'declined' && !matomoLoaded) {
-        pass('Declined consent and Matomo SDK not detected');
-      } else if (state.choice === 'declined' && matomoLoaded) {
-        fail('Declined consent, but Matomo SDK is still detected');
-      }
-
-      if (state.choice === 'custom' && state.stats === '1' && matomoLoaded) {
-        pass('Partial consent with analytics enabled and Matomo SDK detected');
-      } else if (state.choice === 'custom' && state.stats === '1' && !matomoLoaded) {
-        fail('Partial consent with analytics enabled, but Matomo SDK not detected');
-      }
-
-      if (state.choice === 'custom' && state.stats === '0' && !matomoLoaded) {
-        pass('Partial consent with analytics disabled and Matomo SDK not detected');
-      } else if (state.choice === 'custom' && state.stats === '0' && matomoLoaded) {
-        fail('Partial consent with analytics disabled, but Matomo SDK is still detected');
-      }
-
+      
+      odswiezWszystko();
+      
+      var wybor = localStorage.getItem('matomoConsentChoice:v2');
+      var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+      var matomoZaladowane = typeof Matomo !== 'undefined';
+      
+      console.log('Wyniki Testów:');
+      console.log('─────────────────────────────────────────');
+      console.log('Wybór Consent:', wybor || 'brak');
+      console.log('Stats Włączone:', stats || 'brak');
+      console.log('Matomo Załadowane:', matomoZaladowane);
       console.log('');
-      console.log('Results: ' + passed + ' passed, ' + failed + ' failed');
+      
+      var zaliczone = 0;
+      var niezaliczone = 0;
+      
+      // Test 1: Brak consent = brak Matomo
+      if (!wybor && !matomoZaladowane) {
+        console.log('✅ Test 1 PASS: Brak consent, brak Matomo');
+        zaliczone++;
+      } else if (!wybor && matomoZaladowane) {
+        console.error('❌ Test 1 FAIL: Brak consent ale Matomo załadowane!');
+        niezaliczone++;
+      }
+      
+      // Test 2: Accept = Matomo załadowane
+      if (wybor === 'accepted' && matomoZaladowane) {
+        console.log('✅ Test 2 PASS: Accepted, Matomo załadowane');
+        zaliczone++;
+      } else if (wybor === 'accepted' && !matomoZaladowane) {
+        console.error('❌ Test 2 FAIL: Accepted ale Matomo nie załadowane!');
+        niezaliczone++;
+      }
+      
+      // Test 3: Reject = brak Matomo
+      if (wybor === 'declined' && !matomoZaladowane) {
+        console.log('✅ Test 3 PASS: Rejected, brak Matomo');
+        zaliczone++;
+      } else if (wybor === 'declined' && matomoZaladowane) {
+        console.error('❌ Test 3 FAIL: Rejected ale Matomo załadowane!');
+        niezaliczone++;
+      }
+      
+      // Test 4: Partial accept = Matomo
+      if (wybor === 'custom' && stats === '1' && matomoZaladowane) {
+        console.log('✅ Test 4 PASS: Partial accept, Matomo załadowane');
+        zaliczone++;
+      } else if (wybor === 'custom' && stats === '1' && !matomoZaladowane) {
+        console.error('❌ Test 4 FAIL: Partial accept ale Matomo nie załadowane!');
+        niezaliczone++;
+      }
+      
+      // Test 5: Partial reject = brak Matomo
+      if (wybor === 'custom' && stats === '0' && !matomoZaladowane) {
+        console.log('✅ Test 5 PASS: Partial reject, brak Matomo');
+        zaliczone++;
+      } else if (wybor === 'custom' && stats === '0' && matomoZaladowane) {
+        console.error('❌ Test 5 FAIL: Partial reject ale Matomo załadowane!');
+        niezaliczone++;
+      }
+      
+      console.log('');
+      console.log('─────────────────────────────────────────');
+      console.log('Wyniki: ' + zaliczone + ' zaliczone, ' + niezaliczone + ' niezaliczone');
       console.log('═══════════════════════════════════════════');
     }
 
-    window._mtm = window._mtm || [];
-    hookMtmPush();
+    // Auto-odświeżanie co 2 sekundy
+    setInterval(odswiezWszystko, 2000);
 
-    setInterval(refreshAll, 2000);
-
-    window.addEventListener('load', function() {
-      initBanner();
-      refreshAll();
-
+    // Początkowe załadowanie
+    setTimeout(function() {
+      odswiezWszystko();
+      
       console.log('');
       console.log('═══════════════════════════════════════════');
-      console.log('QA TEST PAGE READY');
+      console.log('STRONA TESTOWA QA GOTOWA');
       console.log('═══════════════════════════════════════════');
       console.log('');
-      console.log('This page only injects MTM container_8JgEPMOA.js.');
-      console.log('Any Matomo SDK loaded afterward should come from MTM rules.');
-    });
+      console.log('Eventy bannera push\'owane do _mtm:');
+      console.log('• cookie_banner_display');
+      console.log('• cookie_accept');
+      console.log('• cookie_reject');
+      console.log('• cookie_partial');
+      console.log('');
+      console.log('MTM symuluje:');
+      console.log('• Bootstrap tag (sprawdzanie przy page load)');
+      console.log('• Apply consent tag (listener eventów)');
+      console.log('');
+    }, 500);
   </script>
 
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Symulowany MTM Container                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+      <!-- MTM Container -->
   <script>
-    window._mtm = window._mtm || [];
-    window._mtm.push({ 'mtm.startTime': (new Date().getTime()), event: 'mtm.Start' });
-
+    var _mtm = window._mtm = window._mtm || [];
+    _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
     (function() {
-      var d = document;
-      var g = d.createElement('script');
-      var s = d.getElementsByTagName('script')[0];
-
-      g.async = true;
-      g.src = 'https://pi-ogp.gov.pl/js/container_8JgEPMOA.js';
-
-      g.onload = function() {
-        window.__mtmContainerLoaded = true;
-        console.log('[MTM] ✅ container_8JgEPMOA.js loaded');
-        refreshAll();
-      };
-
-      g.onerror = function() {
-        console.error('[MTM] ❌ Failed to load container_8JgEPMOA.js');
-      };
-
-      s.parentNode.insertBefore(g, s);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.async=true; 
+      g.src='https://pi-ogp.coi.gov.pl/js/container_8JgEPMOA.js'; 
+      s.parentNode.insertBefore(g,s);
     })();
+  </script>
+
+  
+  <script>
+    var _mtm = window._mtm = window._mtm || [];
+    _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+    
+    console.log('[MTM] Container zainicjalizowany');
+    
+    // ═══════════════════════════════════════════════════════
+    // Symulacja Bootstrap Tag (Page Load)
+    // ═══════════════════════════════════════════════════════
+    
+    (function() {
+      console.log('[MTM Bootstrap] Sprawdzanie stanu zgody...');
+      
+      var wybor = null;
+      var statsWlaczone = false;
+      
+      try {
+        wybor = localStorage.getItem('matomoConsentChoice:v2');
+        var stats = localStorage.getItem('matomoConsentStatsEnabled:v1');
+        statsWlaczone = (stats === '1');
+      } catch (e) {}
+      
+      var consentUdzielony = false;
+      if (wybor === 'accepted' || (wybor === 'custom' && statsWlaczone)) {
+        consentUdzielony = true;
+      }
+      
+      console.log('[MTM Bootstrap] Consent udzielony:', consentUdzielony);
+      
+      if (!consentUdzielony) {
+        console.log('[MTM Bootstrap] Brak consent - Matomo NIE załadowane');
+        return;
+      }
+      
+      console.log('[MTM Bootstrap] Ładowanie Matomo...');
+      zaladujMatomo('bootstrap');
+    })();
+    
+    // ═══════════════════════════════════════════════════════
+    // Nasłuchiwanie Eventów Consent
+    // ═══════════════════════════════════════════════════════
+    
+    var originalPush = _mtm.push;
+    _mtm.push = function(dane) {
+      if (dane && dane.event) {
+        console.log('[MTM Event]', dane.event, dane);
+        
+        // Symulacja Apply Consent tag
+        var consentUdzielony = false;
+        
+        if (dane.event === 'cookie_accept') {
+          consentUdzielony = true;
+        } else if (dane.event === 'cookie_partial' && dane.consent_statistics === 1) {
+          consentUdzielony = true;
+        }
+        
+        if (consentUdzielony) {
+          console.log('[MTM Apply Consent] Consent udzielony - ładowanie Matomo');
+          setTimeout(function() {
+            zaladujMatomo('user_action');
+          }, 100);
+        } else if (dane.event.includes('cookie_reject') || 
+                   (dane.event === 'cookie_partial' && dane.consent_statistics === 0)) {
+          console.log('[MTM Apply Consent] Consent odrzucony - Matomo NIE załadowane');
+        }
+      }
+      return originalPush.apply(this, arguments);
+    };
+    
+    // ═══════════════════════════════════════════════════════
+    // Funkcja Ładowania Matomo
+    // ═══════════════════════════════════════════════════════
+    
+
+      
+
+    
   </script>
 </body>
 </html>
