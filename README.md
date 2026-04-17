@@ -366,10 +366,6 @@ W razie problemów:
 
 ---
 
-## 📝 Licencja
-
-[Twoja Licencja]
-
 ## ✨ Wersja
 
 2.0.0 - Zarządzanie przez MTM
