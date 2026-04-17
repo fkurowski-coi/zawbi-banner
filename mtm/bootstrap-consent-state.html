@@ -1,8 +1,24 @@
+<!-- 
+  ════════════════════════════════════════════════════════════════
+  MTM Custom HTML Tag: CMP - Bootstrap consent state
+  ════════════════════════════════════════════════════════════════
+  
+  Trigger: Page View - All Pages
+  
+  Cel:
+  - Sprawdza localStorage przy każdym ładowaniu strony
+  - Jeśli consent udzielony → ładuje matomo.js natychmiast
+  - Jeśli consent odrzucony → nic nie robi (brak trackingu)
+  
+  WAŻNE: Zmień Site ID na swoje rzeczywiste ID!
+  ════════════════════════════════════════════════════════════════
+-->
+
 <script>
 (function() {
   'use strict';
   
-  // Check localStorage for saved consent
+  // Sprawdź localStorage pod kątem zapisanej zgody
   var choice = null;
   var statsEnabled = false;
   
@@ -15,7 +31,7 @@
     statsEnabled = (stats === '1' || stats === 'true');
   } catch (e) {}
   
-  // Determine if consent was granted
+  // Określ czy zgoda została udzielona
   var consentGranted = false;
   
   if (choice === 'accepted') {
@@ -24,28 +40,28 @@
     consentGranted = true;
   }
   
-  // If no consent → exit early
+  // Jeśli brak zgody → zakończ
   if (!consentGranted) {
     return;
   }
   
-  // Check if Matomo already loaded (avoid duplicate loading)
+  // Sprawdź czy Matomo już nie jest załadowane (unikaj duplikacji)
   if (typeof Matomo !== 'undefined' && typeof Matomo.getAsyncTracker === 'function') {
     return;
   }
   
-  // Consent granted → load Matomo
+  // Zgoda udzielona → załaduj Matomo
   window._paq = window._paq || [];
   
-  // Configure Matomo
+  // Konfiguracja Matomo
   var u = "https://pi-ogp.coi.gov.pl/";
   _paq.push(['setTrackerUrl', u + 'matomo.php']);
-  _paq.push(['setSiteId', '1']); // ← CHANGE THIS TO YOUR SITE ID!
+  _paq.push(['setSiteId', '1']); // ← ZMIEŃ NA SWOJE SITE ID!
   
-  // Normal tracking with cookies (no consent API)
-  // Do NOT use requireCookieConsent or setCookieConsentGiven
+  // Normalne trackowanie z cookies (bez API consent)
+  // NIE używaj requireCookieConsent lub setCookieConsentGiven
   
-  // Load matomo.js
+  // Załaduj matomo.js
   var d = document;
   var g = d.createElement('script');
   var s = d.getElementsByTagName('script')[0];
@@ -53,7 +69,7 @@
   g.src = u + 'matomo.js';
   
   g.onload = function() {
-    // After Matomo loads, track pageview
+    // Po załadowaniu Matomo, wyślij pageview
     _paq.push(['trackPageView']);
     _paq.push(['enableLinkTracking']);
   };
