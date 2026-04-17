@@ -1,0 +1,55 @@
+<!-- 
+  ════════════════════════════════════════════════════════════════
+  MTM Custom HTML Tag: Matomo - Logowanie consent events
+  ════════════════════════════════════════════════════════════════
+  
+  Triggery (użyj WSZYSTKICH 3):
+    1. Custom Event - Consent Accept (event: cookie_accept)
+    2. Custom Event - Consent Partial Accept (event: cookie_partial, stats=1)
+    3. Custom Event - Consent Reject (event: cookie_reject)
+  
+  Cel:
+  - Loguje decyzje consent jako eventy w Matomo
+  - Umożliwia analizę zgód w raportach
+  - Krótki format (tylko ważne dane)
+  
+  Uwaga: Ten tag loguje TYLKO consent events, nie trackuje pageview!
+  ════════════════════════════════════════════════════════════════
+-->
+
+<script>
+(function() {
+  'use strict';
+  
+  // Pobierz dane z data layer
+  var consentId = {{DLV - consent_id}} || 'unknown';
+  var consentStats = {{DLV - consent_statistics}};
+  var consentUrl = {{DLV - consent_url}} || location.pathname;
+  var bannerVersion = {{DLV - banner_version}} || '2.0.0';
+  var consentDatetime = {{DLV - consent_datetime}} || new Date().toISOString();
+  
+  // Określ akcję
+  var action = 'unknown';
+  if (typeof consentStats === 'number') {
+    action = consentStats === 1 ? 'accepted' : 'rejected';
+  }
+  
+  // Zbuduj krótki payload
+  var payload = {
+    id: consentId,
+    stats: consentStats,
+    url: consentUrl,
+    version: bannerVersion,
+    datetime: consentDatetime
+  };
+  
+  // Wyślij event do Matomo
+  window._paq = window._paq || [];
+  _paq.push([
+    'trackEvent',
+    'consent',           // kategoria
+    action,              // akcja: accepted / rejected
+    JSON.stringify(payload)  // label: JSON z danymi
+  ]);
+})();
+</script>
