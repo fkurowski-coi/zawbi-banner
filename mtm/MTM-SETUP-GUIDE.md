@@ -1,61 +1,48 @@
-# 📋 Matomo Tag Manager - Complete Setup Guide
+# 📋 Matomo Tag Manager - Instrukcja Instalacji
 
-## Overview
+## Przegląd
 
-This setup implements consent-based Matomo tracking:
+Implementacja consent-based trackingu dla Matomo:
 
-- ✅ **Accept** → Matomo loads and tracks with cookies (normal tracking with visitor ID)
-- ✅ **Partial Accept (analytics enabled)** → Same as Accept
-- ❌ **Reject** → Matomo doesn't load at all (no tracking)
-- ❌ **Partial Reject (analytics disabled)** → Same as Reject
+- ✅ **Accept** → Matomo ładuje się i trackuje z cookies + visitor ID
+- ✅ **Partial Accept (analytics włączone)** → Jak Accept
+- ❌ **Reject** → Matomo się w ogóle nie ładuje
+- ❌ **Partial Reject (analytics wyłączone)** → Jak Reject
 
-**Key Principles:**
-- Banner only pushes events to `_mtm` (no direct Matomo calls)
-- MTM manages all Matomo loading and tracking
-- No tracking before user decision
-- No Matomo consent API (no `requireConsent`, `setCookieConsentGiven`, etc.)
-- Normal cookie-based tracking when consent granted
+**Kluczowe Zasady:**
+- Banner tylko push'uje eventy do `_mtm`
+- MTM zarządza ładowaniem Matomo
+- Brak trackingu przed decyzją usera
+- Normalne trackowanie z cookies (bez Matomo consent API)
+- Triggery używają warunków, NIE zmiennej {{Event}}
 
 ---
 
-## HTML Implementation
-
-### Page Structure
+## Implementacja HTML
 
 ```html
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <title>Your Site</title>
-  
-  <!-- Banner CSS -->
   <link rel="stylesheet" href="/path/to/zawbi_banner.css">
 </head>
 <body>
 
-  <!-- Your content -->
-  <h1>Your Website</h1>
+  <!-- Twoja treść -->
   
-  <!-- Consent management link (optional) -->
-  <a href="#" id="manage-consent">Zarządzaj zgodami</a>
-  
-  <!-- ══════════════════════════════════════════ -->
-  <!-- Banner SDK (before MTM)                    -->
-  <!-- ══════════════════════════════════════════ -->
+  <!-- Banner SDK (przed MTM) -->
   <script src="/path/to/zawbi_banner.js"></script>
   <script>
     MatomoConsentSDK.init({
-      policyUrl: '/web/gov/polityka-dotyczaca-cookies',
+      policyUrl: '/polityka-prywatnosci',
       cookieTableEnabled: false,
     });
     
-    // Show banner (skip on policy page)
-    if (!window.location.pathname.includes('/web/gov/polityka-dotyczaca-cookies')) {
+    if (!window.location.pathname.includes('/polityka-prywatnosci')) {
       MatomoConsentSDK.showBanner();
     }
     
-    // Manage consent button
+    // Opcjonalnie: Przycisk zarządzania zgodami
     document.getElementById('manage-consent').addEventListener('click', function(e) {
       e.preventDefault();
       MatomoConsentSDK.showBanner({
@@ -65,34 +52,29 @@ This setup implements consent-based Matomo tracking:
     });
   </script>
   
-  <!-- ══════════════════════════════════════════ -->
-  <!-- MTM Container (after Banner)               -->
-  <!-- ══════════════════════════════════════════ -->
+  <!-- MTM Container (po Bannerze) -->
   <script>
     var _mtm = window._mtm = window._mtm || [];
     _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
     (function() {
       var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
       g.async=true; 
-      g.src='https://pi-ogp.coi.gov.pl/js/container_YOUR_ID.js'; 
+      g.src='https://pi-ogp.coi.gov.pl/js/container_TWOJ_ID.js'; 
       s.parentNode.insertBefore(g,s);
     })();
   </script>
   
-  <!-- ⚠️ DO NOT add Matomo tracking snippet here! -->
-  <!-- MTM will load matomo.js conditionally -->
+  <!-- NIE dodawaj snippetu Matomo! -->
 
 </body>
 </html>
 ```
 
-**CRITICAL:** Do NOT include standard Matomo tracking snippet. MTM loads `matomo.js` conditionally.
-
 ---
 
-## MTM Configuration
+## Konfiguracja MTM
 
-### Step 1: Create Data Layer Variable
+### Krok 1: Stwórz Zmienną Data Layer
 
 **MTM → Variables → New Variable**
 
@@ -100,16 +82,16 @@ This setup implements consent-based Matomo tracking:
 Name: DLV - consent_statistics
 Type: Data Layer Variable
 Data Layer Variable Name: consent_statistics
-Default Value: (leave empty)
+Default Value: (zostaw puste)
 ```
-
-Click **[Create Variable]**
 
 ---
 
-### Step 2: Create Triggers
+### Krok 2: Stwórz Triggery
 
-#### Trigger A: Page View - All Pages
+Potrzebujesz **3 triggery** w sumie.
+
+#### Trigger 1: Page View - All Pages
 
 ```
 Name: Page View - All Pages
@@ -117,22 +99,34 @@ Type: Page View
 Fire on: All Page Views
 ```
 
-This trigger likely already exists in MTM.
+(Ten trigger prawdopodobnie już istnieje)
 
-#### Trigger B: Consent Events
+#### Trigger 2: Consent Accept
 
 ```
-Name: Custom Event - Consent Decision
+Name: Custom Event - Consent Accept
 Type: Custom Event
-Event Name: (use regex matching)
-  ^cookie_accept$|^cookie_reject$|^cookie_partial$
+Event Name: cookie_accept
 ```
 
-**Important:** Enable regex matching for event name.
+Prosty - uruchamia się gdy banner push'uje event `cookie_accept`.
+
+#### Trigger 3: Consent Partial Accept
+
+```
+Name: Custom Event - Consent Partial Accept
+Type: Custom Event
+Event Name: cookie_partial
+
+Warunki:
+  Fire when: {{DLV - consent_statistics}} equals 1
+```
+
+Uruchamia się na `cookie_partial` ALE tylko gdy analytics włączone.
 
 ---
 
-### Step 3: Create Custom HTML Tags
+### Krok 3: Stwórz Tagi
 
 #### Tag 1: CMP - Bootstrap consent state
 
@@ -141,14 +135,13 @@ Event Name: (use regex matching)
 ```
 Name: CMP - Bootstrap consent state
 Type: Custom HTML
-HTML: [Paste content from mtm/bootstrap-consent-state.html]
+HTML: [Wklej z mtm/bootstrap-consent-state.html]
+
 Fire on: Page View - All Pages
 
-⚠️ CRITICAL: Change Site ID in the HTML code!
-Line: _paq.push(['setSiteId', '1']);
+⚠️ ZMIEŃ SITE ID w HTML:
+   _paq.push(['setSiteId', '1']);  ← Twoje Site ID
 ```
-
-See file: `mtm/bootstrap-consent-state.html`
 
 #### Tag 2: Matomo - Apply consent mode
 
@@ -157,254 +150,165 @@ See file: `mtm/bootstrap-consent-state.html`
 ```
 Name: Matomo - Apply consent mode
 Type: Custom HTML
-HTML: [Paste content from mtm/apply-consent-mode.html]
-Fire on: Custom Event - Consent Decision
+HTML: [Wklej z mtm/apply-consent-mode.html]
 
-⚠️ CRITICAL: Change Site ID in the HTML code!
-Line: _paq.push(['setSiteId', '1']);
+Fire on (wybierz OBA):
+  1. Custom Event - Consent Accept
+  2. Custom Event - Consent Partial Accept
+
+⚠️ ZMIEŃ SITE ID w HTML:
+   _paq.push(['setSiteId', '1']);  ← Twoje Site ID
 ```
 
-See file: `mtm/apply-consent-mode.html`
+**Ważne:** Ten tag potrzebuje **DWÓCH triggerów** (Accept + Partial Accept).
 
 ---
 
-### Step 4: Change Site ID
+### Krok 4: Zmień Site ID
 
-**In BOTH custom HTML tags, find this line:**
+W **OBU** custom HTML tagach, znajdź i zmień:
 
 ```javascript
-_paq.push(['setSiteId', '1']); // ← CHANGE THIS!
+_paq.push(['setSiteId', '1']); // ← Zmień '1' na swoje Site ID!
 ```
 
-**Change `'1'` to your actual Matomo Site ID.**
-
-Find your Site ID in:
-**Matomo → Administration → Websites → Manage**
+Znajdź swoje Site ID: **Matomo → Administration → Websites → Manage**
 
 ---
 
-### Step 5: Publish Container
+### Krok 5: Opublikuj
 
 **MTM → Versions → Publish**
 
 ```
 Version Name: Consent-based tracking v2.0
-Description: Banner manages consent, MTM manages Matomo loading.
-             No tracking before consent. Accept = cookies + tracking.
-             Reject = no Matomo at all.
-```
-
-Click **[Publish]**
-
----
-
-## How It Works
-
-### Scenario 1: First Visit (No Decision Yet)
-
-```
-1. User lands on page
-2. MTM container loads
-3. Bootstrap tag fires → No consent → Does nothing
-4. Banner shows
-5. No tracking happens
-✅ CORRECT: No tracking before decision
-```
-
-### Scenario 2: User Clicks "Accept"
-
-```
-1. User clicks "Zezwól na wszystkie"
-2. Banner saves to localStorage
-3. Banner pushes event to _mtm:
-   { event: 'cookie_accept', consent_statistics: 1, ... }
-4. Apply consent tag fires
-5. Tag loads matomo.js dynamically
-6. After load: trackPageView sent
-7. Request to matomo.php WITH cookies and visitor ID
-✅ Normal tracking
-```
-
-### Scenario 3: User Clicks "Reject"
-
-```
-1. User clicks "Odrzuć"
-2. Banner saves to localStorage
-3. Banner pushes event to _mtm:
-   { event: 'cookie_reject', consent_statistics: 0, ... }
-4. Apply consent tag fires
-5. Tag checks: consent_statistics = 0 → Does nothing
-6. No matomo.js loaded
-7. No tracking
-✅ CORRECT: User rejected, no tracking
-```
-
-### Scenario 4: Return Visit (Consent Already Given)
-
-```
-1. User lands on page
-2. Bootstrap tag fires
-3. Tag checks localStorage → consent found
-4. Tag loads matomo.js immediately
-5. trackPageView sent
-6. Banner doesn't show
-✅ Tracking from first pageview
+Description: Warunkowe ładowanie Matomo na podstawie consent
 ```
 
 ---
 
-## Testing & Verification
+## Podsumowanie Konfiguracji
 
-### Test 1: First Visit (No Consent)
+### Zmienne (1)
+```
+DLV - consent_statistics
+```
 
-**Setup:** Clear localStorage + cookies
+### Triggery (3)
+```
+1. Page View - All Pages
+2. Custom Event - Consent Accept (event: cookie_accept)
+3. Custom Event - Consent Partial Accept (event: cookie_partial, gdy stats=1)
+```
 
-**Expected:**
-- ❌ No `matomo.js` request
-- ❌ No `matomo.php` request
-- ✅ Banner visible
+### Tagi (2)
+```
+1. Bootstrap (Custom HTML, uruchamia się na Page View)
+2. Apply Consent (Custom HTML, uruchamia się na triggerach Accept)
+```
 
-```javascript
-typeof Matomo === 'undefined' // true
-localStorage.getItem('matomoConsentChoice:v2') // null
+---
+
+## Opcjonalnie: Logowanie Consent Events
+
+Jeśli chcesz logować decyzje consent w Matomo jako eventy:
+
+1. Stwórz dodatkowe zmienne (zobacz `mtm/CONSENT-LOGGING-VARIABLES.md`)
+2. Dodaj tag z `mtm/log-consent-event.html`
+
+---
+
+## Testowanie
+
+### Test 1: Pierwsza Wizyta
+```
+Wyczyść localStorage + cookies
+Załaduj stronę
+Oczekiwane: Brak matomo.js, banner pojawia się
 ```
 
 ### Test 2: Accept
-
-**Steps:** Click "Zezwól na wszystkie"
-
-**Expected:**
-- ✅ `matomo.js` loads
-- ✅ `matomo.php` request sent
-- ✅ Cookies created: `_pk_id`, `_pk_ses`
-- ✅ Banner closes
-
-```javascript
-typeof Matomo !== 'undefined' // true
-localStorage.getItem('matomoConsentChoice:v2') // 'accepted'
-document.cookie.includes('_pk_id') // true
+```
+Kliknij "Zezwól na wszystkie"
+Oczekiwane: matomo.js ładuje się, request matomo.php, cookies stworzone
 ```
 
-### Test 3: Return Visit After Accept
-
-**Setup:** Keep localStorage, reload page
-
-**Expected:**
-- ✅ `matomo.js` loads IMMEDIATELY
-- ✅ `matomo.php` sent IMMEDIATELY
-- ✅ Banner does NOT show
+### Test 3: Return Visit
+```
+Przeładuj (zostaw localStorage)
+Oczekiwane: matomo.js ładuje się natychmiast, brak bannera
+```
 
 ### Test 4: Reject
-
-**Setup:** Clear localStorage, reload, click "Odrzuć"
-
-**Expected:**
-- ❌ No `matomo.js`
-- ❌ No `matomo.php`
-- ❌ No cookies
-
-```javascript
-typeof Matomo === 'undefined' // true
-localStorage.getItem('matomoConsentChoice:v2') // 'declined'
+```
+Wyczyść localStorage, kliknij "Odrzuć"
+Oczekiwane: Brak matomo.js, brak trackingu
 ```
 
-### Test 5: Partial Accept (Analytics = ON)
-
-**Steps:** Click "Spersonalizuj" → Check "Statystyczne" → "Zapisz"
-
-**Expected:**
-- ✅ Same as Accept
-
-```javascript
-localStorage.getItem('matomoConsentChoice:v2') // 'custom'
-localStorage.getItem('matomoConsentStatsEnabled:v1') // '1'
+### Test 5: Partial Accept (stats=1)
+```
+"Spersonalizuj" → Zaznacz "Statystyczne" → "Zapisz"
+Oczekiwane: Jak Accept
 ```
 
-### Test 6: Partial Reject (Analytics = OFF)
-
-**Steps:** Click "Spersonalizuj" → Uncheck "Statystyczne" → "Zapisz"
-
-**Expected:**
-- ❌ Same as Reject
-
-```javascript
-localStorage.getItem('matomoConsentChoice:v2') // 'custom'
-localStorage.getItem('matomoConsentStatsEnabled:v1') // '0'
+### Test 6: Partial Reject (stats=0)
+```
+"Spersonalizuj" → Odznacz "Statystyczne" → "Zapisz"
+Oczekiwane: Jak Reject
 ```
 
 ---
 
-## Debug Commands
+## Komendy Debug
 
 ```javascript
-// Check consent state
+// Sprawdź consent
 localStorage.getItem('matomoConsentChoice:v2')
 localStorage.getItem('matomoConsentStatsEnabled:v1')
 
-// Check if Matomo loaded
+// Sprawdź Matomo
 typeof Matomo !== 'undefined'
 
-// Check MTM events
+// Sprawdź eventy
 _mtm.filter(item => item.event && item.event.includes('cookie'))
 
-// Check cookies
+// Sprawdź cookies
 document.cookie.split(';').filter(c => c.includes('_pk_'))
-
-// Force show banner
-MatomoConsentSDK.showBanner({ forceShow: true, forceCookiePanel: true });
-
-// Reset consent
-MatomoConsentSDK.resetConsent();
-location.reload();
 ```
 
 ---
 
 ## Troubleshooting
 
-### Matomo loads before consent
-- Remove standard Matomo snippet from HTML
-- Check all MTM tags
-- Search HTML for `matomo.js`
+### Matomo ładuje się przed consent
+- Usuń standardowy snippet Matomo z HTML
+- Sprawdź czy żaden inny tag nie ładuje Matomo
 
-### Matomo doesn't load after accept
-- Check console for JavaScript errors
-- Verify Site ID in both custom HTML tags
-- Check MTM Preview mode
-- Verify variable `{{DLV - consent_statistics}}` exists
+### Matomo nie ładuje się po accept
+- Sprawdź console pod kątem błędów
+- Zweryfikuj Site ID w obu tagach
+- Użyj MTM Preview aby zobaczyć które tagi się uruchamiają
+- Zweryfikuj że zmienna `{{DLV - consent_statistics}}` istnieje
 
-### No cookies after accept
-- Check browser cookie settings
-- Verify normal tracking (no `requireCookieConsent`)
-
-### Duplicate pageviews
-- Check MTM Preview to see which tags fire
-- Apply consent tag has duplicate check built-in
+### Apply Consent tag się nie uruchamia
+- Sprawdź czy ma OBA triggery (Accept + Partial Accept)
+- Zweryfikuj że triggery są poprawnie skonfigurowane
+- Użyj MTM Preview do debugowania
 
 ---
 
-## Summary
+## Oczekiwane Zachowanie
 
-### Configuration Checklist
+| Akcja Usera | Matomo? | Tracking? | Cookies? | Visitor ID? |
+|-------------|---------|-----------|----------|-------------|
+| Brak decyzji | ❌ | ❌ | ❌ | ❌ |
+| Accept | ✅ | ✅ | ✅ | ✅ |
+| Reject | ❌ | ❌ | ❌ | ❌ |
+| Partial (stats=1) | ✅ | ✅ | ✅ | ✅ |
+| Partial (stats=0) | ❌ | ❌ | ❌ | ❌ |
+| Return (accepted) | ✅ Natychmiast | ✅ | ✅ | ✅ |
+| Return (rejected) | ❌ | ❌ | ❌ | ❌ |
 
-- [ ] 1 Variable: `DLV - consent_statistics`
-- [ ] 2 Triggers: Page View + Custom Event (regex)
-- [ ] 2 Custom HTML Tags: Bootstrap + Apply Consent
-- [ ] Site ID changed in BOTH tags
-- [ ] Container published
-- [ ] No standard Matomo snippet in HTML
-- [ ] Banner loads before MTM
+---
 
-### Expected Behavior
-
-| User Action | Matomo? | Tracking? | Cookies? |
-|-------------|---------|-----------|----------|
-| No decision | ❌ No | ❌ No | ❌ No |
-| Accept | ✅ Yes | ✅ Yes | ✅ Yes |
-| Reject | ❌ No | ❌ No | ❌ No |
-| Partial (stats=1) | ✅ Yes | ✅ Yes | ✅ Yes |
-| Partial (stats=0) | ❌ No | ❌ No | ❌ No |
-| Return (accepted) | ✅ Immediate | ✅ Yes | ✅ Yes |
-| Return (rejected) | ❌ No | ❌ No | ❌ No |
-
-**Ready for production!** 🚀
+**Gotowe do produkcji!** 🚀
